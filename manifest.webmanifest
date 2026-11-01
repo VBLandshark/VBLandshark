@@ -1,0 +1,13 @@
+{
+  "name": "VBLandshark's Rudee Inlet Surf and Fish Conditions",
+  "short_name": "VBLandshark",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#eef3f4",
+  "theme_color": "#0d3f52",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
