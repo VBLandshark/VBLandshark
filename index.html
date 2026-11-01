@@ -210,6 +210,9 @@ window.addEventListener("error", function (e) {
   .cf-row .pill { white-space:normal; text-align:left; font-size:12.5px; padding:3px 10px; }
   .cf-why { font-size:12.5px; color:var(--muted); }
   .mascot { margin:16px 0 0; padding:8px; width:min(100%, 320px); }
+  .fd-phone { font-size:13px; color:var(--muted); margin-top:4px; }
+  .fd-sp .fd-phone { display:inline; margin:0; white-space:nowrap; }
+  .fd-tel { color:var(--accent); text-decoration:none; white-space:nowrap; font-variant-numeric:tabular-nums; }
   .copyleft { margin:8px 0 0; }
   .cl { display:inline-block; transform:scaleX(-1); }
   .mascot img { width:100%; height:auto; display:block; border-radius:6px; }
@@ -2018,14 +2021,14 @@ setInterval(loadRadar, 5 * 60 * 1000);
 // ---- Food & drink: oceanfront happy hours and daily specials (pulled Nov 1, 2026) ----
 // days: 0 = Sunday … 6 = Saturday
 const HAPPY_HOURS = [
-  {name:"CP Shuckers", where:"Oceanfront", days:[1,2,3,4,5], when:"Mon–Fri 3–7 PM", deals:"Drink and food specials (prices not posted)", src:"official"},
-  {name:"Big Sam's Inlet Cafe & Raw Bar", where:"Rudee Inlet", days:[0,1,2,3,4,5,6], when:"Daily 3–7 PM", deals:"$1.59 oysters · 99¢ clams · $1.49 wings · ½ lb shrimp $9.99 · domestic beer $3.59 · wells $5.49 or less", src:"guide"},
-  {name:"The Atlantic on Pacific", where:"Pacific Ave", days:[0,1,2,3,4,5,6], when:"Daily 3–6 PM", deals:"$1 clams and oysters · wine, beer and cocktails $9 or less", src:"guide"},
-  {name:"Waterman's Surfside Grille", where:"415 Atlantic Ave", days:[1,2,3,4], when:"Mon–Thu 2–5 PM", deals:"$5 Orange Crush · $5 drafts · $8 seafood plates", src:"guide"},
-  {name:"Dough Boys Pizza", where:"24th & 33rd on Atlantic", days:[1,2,3,4,5], when:"Mon–Fri 4–5:30 PM", deals:"$5 drafts, wine and wells · $5 fries or mac 'n' cheese bites", src:"guide"},
-  {name:"Hemingway's", where:"2101 Atlantic Ave", days:[0,1,2,3,4,5,6], when:"Daily 4–6 PM", deals:"Happy hour menu (prices not posted)", src:"official"},
-  {name:"The Shack on 8th", where:"712 Atlantic Ave", days:[5,0], when:"Fri 4–7 PM · Sun from noon", deals:"Prices not posted", src:"official"},
-  {name:"Jumpin' Shrimp", where:"1211 Atlantic Ave", days:[0,1,2,3,4,5,6], when:"Daily 7–11 AM", deals:"$5 Bloody Marys and mimosas", src:"official"},
+  {name:"CP Shuckers", phone:"(757) 425-8676", where:"Oceanfront", days:[1,2,3,4,5], when:"Mon–Fri 3–7 PM", deals:"Drink and food specials (prices not posted)", src:"official"},
+  {name:"Big Sam's Inlet Cafe & Raw Bar", phone:"(757) 428-4858", where:"Rudee Inlet", days:[0,1,2,3,4,5,6], when:"Daily 3–7 PM", deals:"$1.59 oysters · 99¢ clams · $1.49 wings · ½ lb shrimp $9.99 · domestic beer $3.59 · wells $5.49 or less", src:"guide"},
+  {name:"The Atlantic on Pacific", phone:"(757) 422-2122", where:"Pacific Ave", days:[0,1,2,3,4,5,6], when:"Daily 3–6 PM", deals:"$1 clams and oysters · wine, beer and cocktails $9 or less", src:"guide"},
+  {name:"Waterman's Surfside Grille", phone:"(757) 428-3644", where:"415 Atlantic Ave", days:[1,2,3,4], when:"Mon–Thu 2–5 PM", deals:"$5 Orange Crush · $5 drafts · $8 seafood plates", src:"guide"},
+  {name:"Dough Boys Pizza", phone:"24th: (757) 425-7108 · 33rd: (757) 747-2511", where:"24th & 33rd on Atlantic", days:[1,2,3,4,5], when:"Mon–Fri 4–5:30 PM", deals:"$5 drafts, wine and wells · $5 fries or mac 'n' cheese bites", src:"guide"},
+  {name:"Hemingway's", phone:"(757) 491-1500 hotel", where:"2101 Atlantic Ave", days:[0,1,2,3,4,5,6], when:"Daily 4–6 PM", deals:"Happy hour menu (prices not posted)", src:"official"},
+  {name:"The Shack on 8th", phone:"(757) 319-5146", where:"712 Atlantic Ave", days:[5,0], when:"Fri 4–7 PM · Sun from noon", deals:"Prices not posted", src:"official"},
+  {name:"Jumpin' Shrimp", phone:"(757) 222-6532", where:"1211 Atlantic Ave", days:[0,1,2,3,4,5,6], when:"Daily 7–11 AM", deals:"$5 Bloody Marys and mimosas", src:"official"},
 ];
 const DAY_SPECIALS = [
   {days:[1,2,3,4,5], place:"Dough Boys Pizza", what:"11 AM–4 PM: cheese pizza, Orange Crush or Bloody Mary, $8.88 each"},
@@ -2037,6 +2040,9 @@ const DAY_SPECIALS = [
   {days:[4], place:"CP Shuckers", what:"$5 VB and Orange Crushes all day"},
   {days:[5], place:"CP Shuckers", what:"Prime rib night, 5–9 PM: 10 oz with sides, $25"},
 ];
+// Phone numbers become tap-to-call links.
+const telLinks = t => esc(t || "").replace(/\((\d{3})\) (\d{3})-(\d{4})/g, (m, a, b, c) => `<a class="fd-tel" href="tel:+1${a}${b}${c}">${m}</a>`);
+const phoneFor = place => (HAPPY_HOURS.find(h => h.name === place) || {}).phone;
 const DAY_NAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 function renderFood() {
   const dow = new Date().getDay();
@@ -2048,13 +2054,13 @@ function renderFood() {
   $("fd-hh").innerHTML = HAPPY_HOURS.map(h => `<div class="fd-item${h.days.includes(dow) ? "" : " fd-off"}">
       <div class="fd-top"><b>${esc(h.name)}</b><span class="fd-when">${esc(h.when)}</span></div>
       <div class="fd-where">${esc(h.where)}${h.src === "guide" ? " · from tourism guide" : ""}${h.days.includes(dow) ? "" : " · not today"}</div>
-      <div class="fd-deals">${esc(h.deals)}</div></div>`).join("");
+      <div class="fd-deals">${esc(h.deals)}</div>${h.phone ? `<div class="fd-phone">☎ ${telLinks(h.phone)}</div>` : ""}</div>`).join("");
   const order = [0,1,2,3,4,5,6].map(i => (dow + i) % 7);
   $("fd-days").innerHTML = order.map(d => {
     const list = DAY_SPECIALS.filter(x => x.days.includes(d) && x.days.length < 5);
     const wk = DAY_SPECIALS.filter(x => x.days.includes(d) && x.days.length >= 5);
     return `<div class="fd-day${d === dow ? " fd-now" : ""}"><div class="fd-dn">${DAY_NAMES[d]}${d === dow ? " · today" : ""}</div>
-      ${list.concat(wk).map(x => `<div class="fd-sp"><b>${esc(x.place)}</b> ${esc(x.what)}</div>`).join("") || `<div class="fd-sp fd-none">Nothing listed</div>`}</div>`;
+      ${list.concat(wk).map(x => `<div class="fd-sp"><b>${esc(x.place)}</b> ${esc(x.what)}${phoneFor(x.place) ? ` <span class="fd-phone">☎ ${telLinks(phoneFor(x.place))}</span>` : ""}</div>`).join("") || `<div class="fd-sp fd-none">Nothing listed</div>`}</div>`;
   }).join("");
 }
 renderFood();
