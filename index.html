@@ -5,6 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>VBLandshark's Rudee Inlet Surf and Fish Conditions</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<script>
+// If anything fails while the page loads, show it at the top instead of leaving a blank page.
+window.addEventListener("error", function (e) {
+  try {
+    var b = document.getElementById("load-err") || document.createElement("div");
+    b.id = "load-err";
+    b.style.cssText = "background:#b23a3a;color:#fff;padding:10px 14px;font:14px/1.4 sans-serif;position:relative;z-index:99";
+    b.textContent = "Page error: " + (e.message || "unknown") + (e.lineno ? " (line " + e.lineno + ")" : "");
+    (document.body || document.documentElement).insertBefore(b, (document.body || document.documentElement).firstChild);
+  } catch (x) {}
+});
+</script>
 <!-- Fonts load without blocking the page: it shows immediately in system fonts, then swaps in. -->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=Source+Sans+3:wght@400;600&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=Source+Sans+3:wght@400;600&display=swap"></noscript>
