@@ -193,6 +193,12 @@
   .cf-row .pill { white-space:normal; text-align:left; font-size:12.5px; padding:3px 10px; }
   .cf-why { font-size:12.5px; color:var(--muted); }
   .grid.four { grid-template-columns:repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
+  .cam-links { display:grid; gap:8px; }
+  .cam-btn { display:flex; align-items:center; gap:10px; padding:12px 14px; border-radius:8px; background:var(--accent); color:var(--panel);
+             font-weight:600; text-decoration:none; font-size:14.5px; }
+  .cam-btn.alt { background:transparent; color:var(--accent); border:1.5px solid var(--accent); }
+  .cam-btn:hover { filter:brightness(1.08); }
+  .cam-dot { width:9px; height:9px; border-radius:50%; background:#e5484d; box-shadow:0 0 0 3px rgba(229,72,77,.25); flex:none; }
   .cam { position:relative; width:100%; aspect-ratio:16/9; background:#000; border-radius:4px; overflow:hidden; }
   .cam iframe { position:absolute; inset:0; width:100%; height:100%; border:0; }
   .zone { border-radius:0 0 14px 14px; padding:4px 16px 18px; margin-top:0; }
@@ -399,11 +405,14 @@
     <section class="panel" id="wind"><h2>Wind &amp; weather now</h2><p class="loading">Loading…</p></section>
     <section class="panel" id="uvsuit"><h2>UV &amp; wetsuit</h2><p class="loading">Loading…</p></section>
     <section class="panel" id="beachcam">
-      <h2>Beach cam &amp; radar</h2>
-      <div class="cam"><iframe id="cam-frame" title="Live beach cam at 24th Street" src="https://embed.cdn-surfline.com/cams/6419bb274a4d8adcb70e1f02/3674925899e85512b5d4e4fe9aaa04c8633c2669" allow="autoplay; fullscreen" allowfullscreen loading="lazy"></iframe></div>
-      <p class="note">24th St cam, Surf &amp; Rescue Museum. Plays only on a hosted page. <a href="https://www.vbsurfrescuemuseum.org/surfline-cam" target="_blank" rel="noopener">Open cam</a></p>
+      <h2>Beach cams &amp; radar</h2>
+      <div class="cam-links">
+        <a class="cam-btn" href="https://www.vbsurfrescuemuseum.org/surfline-cam" target="_blank" rel="noopener"><span class="cam-dot"></span>Watch live · 24th Street cam</a>
+        <a class="cam-btn alt" href="https://surfchex.com/cams/virginia-beach-web-cam/" target="_blank" rel="noopener"><span class="cam-dot"></span>Watch live · Fishing pier cam</a>
+      </div>
+      <p class="note" style="margin-top:6px">These cams only play on their owners' sites, so they open in a new tab.</p>
       <div class="radar" id="radar">
-        <img class="r-base" id="radar-base" alt="" loading="lazy">
+        <img class="r-base" id="radar-base" alt="">
         <img class="r-wx" id="radar-wx" alt="Weather radar within 100 miles of Rudee Inlet">
         <svg class="r-over" id="radar-over" viewBox="0 0 200 200" aria-hidden="true"></svg>
       </div>
@@ -1922,7 +1931,6 @@ $("months").addEventListener("click", e => {
 renderFish(new Date().getMonth() + 1);
 
 // Reload the beach cam every hour so it never sits on a stale or stalled stream.
-setInterval(() => { const f = $("cam-frame"); if (f) f.src = f.src; }, 60 * 60 * 1000);
 
 // ---- Radar: NOAA composite reflectivity over a USGS base map, 100 miles each way from the inlet mouth ----
 const R_CLAT = 36.8317, R_CLON = -75.9683, R_MI = 100;
