@@ -248,6 +248,11 @@ window.addEventListener("error", function (e) {
   .fd-sp { font-size:14px; margin-top:2px; }
   .fd-none { color:var(--muted); }
   .tabs button:not([aria-selected="true"]) { box-shadow:inset 0 -3px 0 var(--line); }
+  /* Phones: all five tabs in one row, labels wrap to two lines */
+  @media (max-width:640px) {
+    .tabs { display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:3px; overflow:visible; margin-left:-4px; margin-right:-4px; }
+    .tabs button { padding:9px 2px; font-size:12.5px; line-height:1.15; white-space:normal; border-radius:8px 8px 0 0; min-height:48px; }
+  }
   .pane .group { display:none; }
   .pane { padding-top:16px; }
   .zone-wx { background:var(--z-wx); } .zone-sea { background:var(--z-sea); }
