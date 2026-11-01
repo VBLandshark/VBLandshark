@@ -9,6 +9,7 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0d3f52">
+<meta name="color-scheme" content="dark">
 <meta name="apple-mobile-web-app-title" content="VBLandshark">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <script>
@@ -28,17 +29,13 @@ window.addEventListener("error", function (e) {
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=Source+Sans+3:wght@400;600&display=swap"></noscript>
 <style>
   /* Layout: a stacked field log — current readings up top, tide curve and forecasts below, links last. */
-  :root {
-    --bg:#eef3f4; --panel:#ffffff; --fg:#13262e; --muted:#5b7079; --line:#d5e0e3;
-    --accent:#0b7c86; --wind:#c46a1b; --land:#e3e7d8; --sun:#f0a91f; --cloud:#a7b6bd; --rain:#2f7fd1; --sand:#eadcb4; --sea1:#d6ecee; --sea2:#9fcfd6;
-    --z-wx:#e6eef8; --z-sea:#dcefef; --z-fish:#e7eedc; --z-best:#f4ecdc; --z-food:#f6e6e3; --good:#1f8a4c; --fair:#b7791f; --poor:#b23a3a;
+  /* One dark-blue theme on every device (iPads in light mode were getting a white page). */
+  :root { color-scheme:dark;
+    --bg:#0c1a20; --panel:#12252d; --fg:#e3eef1; --muted:#8ea7b0; --line:#21404b;
+    --accent:#4fc4cc; --wind:#f0a052; --land:#1e3226; --sun:#f5c451; --cloud:#8aa0a9; --rain:#6aaef0; --sand:#4d4632; --sea1:#16343d; --sea2:#0f4a57;
+    --z-wx:#132233; --z-sea:#0f2a2f; --z-fish:#1a2a1c; --z-best:#2a2418; --z-food:#2c1d1b; --good:#4cc27d; --fair:#e0a845; --poor:#e46a6a;
     --display:"Barlow Condensed", "Arial Narrow", sans-serif;
     --body:"Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root { --bg:#0c1a20; --panel:#12252d; --fg:#e3eef1; --muted:#8ea7b0; --line:#21404b;
-            --accent:#4fc4cc; --wind:#f0a052; --land:#1e3226; --sun:#f5c451; --cloud:#8aa0a9; --rain:#6aaef0; --sand:#4d4632; --sea1:#16343d; --sea2:#0f4a57;
-            --z-wx:#132233; --z-sea:#0f2a2f; --z-fish:#1a2a1c; --z-best:#2a2418; --z-food:#2c1d1b; --good:#4cc27d; --fair:#e0a845; --poor:#e46a6a; color-scheme:dark; }
   }
   * { box-sizing:border-box; }
   body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.5 var(--body); -webkit-font-smoothing:antialiased; }
@@ -85,7 +82,7 @@ window.addEventListener("error", function (e) {
   /* Inlet wind map */
   .inlet { position:relative; }
   .inlet svg { width:100%; height:auto; display:block; }
-  .inlet canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+  .inlet canvas { position:absolute; top:0; right:0; bottom:0; left:0; width:100%; height:100%; pointer-events:none; }
   .map-sea0 { stop-color:var(--sea1); } .map-sea1 { stop-color:var(--sea2); }
   .im-land { fill:var(--land); }
   .im-sand { fill:none; stroke:var(--sand); stroke-width:7; stroke-linejoin:round; }
@@ -174,7 +171,7 @@ window.addEventListener("error", function (e) {
   .divider { border-top:1px solid var(--line); margin:14px 0 12px; }
   /* Radar */
   .radar { position:relative; width:100%; aspect-ratio:1; margin-top:14px; border-radius:6px; overflow:hidden; background:var(--sea1); }
-  .radar img, .radar svg { position:absolute; inset:0; width:100%; height:100%; display:block; }
+  .radar img, .radar svg { position:absolute; top:0; right:0; bottom:0; left:0; width:100%; height:100%; display:block; }
   .r-base { opacity:.92; }
   .r-wx { opacity:.85; }
   .r-ring { fill:none; stroke:#1d3a46; stroke-width:.6; stroke-dasharray:2 2; opacity:.55; }
@@ -224,7 +221,7 @@ window.addEventListener("error", function (e) {
   .cam-btn:hover { filter:brightness(1.08); }
   .cam-dot { width:9px; height:9px; border-radius:50%; background:#e5484d; box-shadow:0 0 0 3px rgba(229,72,77,.25); flex:none; }
   .cam { position:relative; width:100%; aspect-ratio:16/9; background:#000; border-radius:4px; overflow:hidden; }
-  .cam iframe { position:absolute; inset:0; width:100%; height:100%; border:0; }
+  .cam iframe { position:absolute; top:0; right:0; bottom:0; left:0; width:100%; height:100%; border:0; }
   .zone { border-radius:0 0 14px 14px; padding:4px 16px 18px; margin-top:0; }
   .tabs { position:sticky; top:env(safe-area-inset-top, 0px); z-index:20; display:flex; gap:4px; overflow-x:auto;
           background:var(--bg); padding-top:8px; margin-top:6px; scrollbar-width:none; }
@@ -279,10 +276,9 @@ window.addEventListener("error", function (e) {
   .zone-wx { background:var(--z-wx); } .zone-sea { background:var(--z-sea); }
   .zone-fish { background:var(--z-fish); } .zone-best { background:var(--z-best); }
   .zone h3.group { margin:16px 0 14px; }
-  .zone h3.group::after { border-color:color-mix(in srgb, var(--fg) 15%, transparent); }
-  .zone-wx h3.group { color:#2e5d8f; } .zone-sea h3.group { color:var(--accent); }
-  .zone-fish h3.group { color:#4c7a32; } .zone-best h3.group { color:#9a6a1c; }
-  @media (prefers-color-scheme: dark) { .zone-wx h3.group { color:#8db8e6; } .zone-fish h3.group { color:#9ccc7c; } .zone-best h3.group { color:#e0b56a; } }
+  .zone h3.group::after { border-color:rgba(227,238,241,.15); border-color:color-mix(in srgb, var(--fg) 15%, transparent); }
+  .zone-wx h3.group { color:#8db8e6; } .zone-sea h3.group { color:var(--accent); }
+  .zone-fish h3.group { color:#9ccc7c; } .zone-best h3.group { color:#e0b56a; }
   h3.group { margin:34px 0 12px; font:600 26px/1 var(--display); letter-spacing:.02em; display:flex; align-items:center; gap:12px; }
   h3.group::after { content:""; flex:1; border-top:1px solid var(--line); }
   #alerts + h3.group { margin-top:4px; }
@@ -401,7 +397,7 @@ window.addEventListener("error", function (e) {
   .months button[aria-selected="true"] { background:var(--accent); border-color:var(--accent); color:var(--panel); }
   .fish-grid { display:grid; gap:12px; grid-template-columns:repeat(auto-fill, minmax(min(100%, 240px), 1fr)); }
   .fish { border:1px solid var(--line); border-radius:6px; overflow:hidden; display:flex; flex-direction:column; min-width:0; }
-  .fish a.pic { display:block; background:#f4f1e8; aspect-ratio:16/9; }
+  .fish a.pic { display:block; position:relative; background:#f4f1e8; aspect-ratio:16/9; }
   .fish img { width:100%; height:100%; object-fit:contain; display:block; }
   .fish .body { padding:10px 12px 12px; display:flex; flex-direction:column; gap:6px; flex:1; }
   .fish .name { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
@@ -411,12 +407,28 @@ window.addEventListener("error", function (e) {
   .p-peak { background:var(--good); } .p-good2 { background:var(--accent); }
   .cal { display:grid; grid-template-columns:repeat(12, 1fr); gap:2px; margin-top:auto; padding-top:4px; }
   .cal span { font-size:9px; text-align:center; padding:2px 0; border-radius:2px; color:var(--muted); background:var(--bg); }
-  .cal span.in { background:color-mix(in srgb, var(--accent) 35%, transparent); color:var(--fg); }
+  .cal span.in { background:rgba(79,196,204,.35); background:color-mix(in srgb, var(--accent) 35%, transparent); color:var(--fg); }
   .cal span.pk { background:var(--good); color:#fff; }
   .cal span.cur { outline:2px solid var(--fg); outline-offset:-1px; font-weight:700; }
   .fish-empty { color:var(--muted); }
   .moon { width:16px; height:16px; vertical-align:-3px; }
   .m-dark { fill:var(--line); } .m-lit { fill:var(--fair); }
+  /* Older Safari (iPads on iOS 14 and earlier) */
+  @supports not (aspect-ratio:1) {
+    .radar { height:0; padding-top:100%; }
+    .cam { height:0; padding-top:56.25%; }
+    .fish a.pic { height:0; padding-top:56.25%; }
+    .fish a.pic img { position:absolute; top:0; left:0; }
+  }
+  @supports not (inset:0) {
+    /* no flex "gap" before Safari 14.1: space items with margins instead */
+    header > *, .stamp > *, .row > *, .now > *, .hours > *, .months > *, .gear > *, .wave-top > *, .tide-top > *,
+    .key > *, .obs-main > *, .dayicon > *, .fd-head > *, .fd-top > *, .fish-head > *, .uv-top > *, .ck-key > *, .r-legend > *,
+    .fish .name > *, .sol-list div > *, .ts-head > *, .cam-btn > * { margin-right:10px; margin-bottom:6px; }
+    .tabs > * { margin-right:4px; }
+    .hr > *, .fd-today > *, .cf-row > *, .dial > *, .fish .body > *, .top-right > * { margin-bottom:4px; }
+    h3.group::after { margin-left:12px; }
+  }
 </style>
 </head>
 <body>
