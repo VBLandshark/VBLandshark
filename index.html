@@ -229,6 +229,7 @@ window.addEventListener("error", function (e) {
   .zone-food { background:var(--z-food); }
   .fd-head { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:baseline; gap:6px 16px; margin-bottom:14px; }
   .fd-date { font-size:13px; font-weight:600; color:var(--fg); background:var(--bg); border:1px solid var(--line); border-radius:999px; padding:3px 10px; }
+  .fd-unpaid { margin:-6px 0 14px; font-size:13px; color:var(--muted); font-style:italic; }
   .fd-today { display:flex; flex-direction:column; gap:3px; background:var(--z-food); border-radius:8px; padding:12px 14px; margin-bottom:18px; }
   .fd-today b { font:600 18px var(--display); }
   .fd-sub { font-size:12.5px; color:var(--muted); }
@@ -506,6 +507,7 @@ window.addEventListener("error", function (e) {
       <h2 style="margin:0">Oceanfront happy hours &amp; daily specials</h2>
       <span class="fd-date">Info pulled Nov 1, 2026</span>
     </div>
+    <p class="fd-unpaid">Not paid or sponsored. No restaurant asked to be listed or paid for placement; these are public specials gathered for information only.</p>
     <div id="fd-today"></div>
     <div class="fd-grid">
       <div>
