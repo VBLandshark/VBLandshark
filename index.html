@@ -283,7 +283,7 @@ window.addEventListener("error", function (e) {
   .pb-n { font-size:13px; margin-top:2px; }
   .pb-n.warn { color:var(--fair); }
   .pb-none { color:var(--muted); padding:10px 0; }
-  .pb-intro { font-size:14px; line-height:1.5; color:var(--fg); background:var(--bg); border-radius:8px; padding:10px 14px; margin-bottom:16px; max-width:none; }
+  .pb-intro { font-size:14px; line-height:1.5; color:var(--fg); background:var(--bg); border-radius:8px; padding:10px 14px; margin-top:16px; max-width:none; }
   .pb-intro p { margin:0 0 6px; } .pb-intro p:last-child { margin:0; }
   .pb-intro a { color:var(--accent); }
   .pb-intro .pb-st { font-size:11px; }
@@ -608,12 +608,12 @@ window.addEventListener("error", function (e) {
       <h2 style="margin:0">VB rec center pickleball · today &amp; tomorrow</h2>
       <a class="pb-pdf" href="pickleball-schedule.pdf" target="_blank" rel="noopener">Full week, all centers (PDF)</a>
     </div>
-    <div class="pb-intro">
-      <p><b>What this shows:</b> indoor drop-in pickleball at Virginia Beach's seven city rec centers for today and tomorrow, with each session's hours, center, address (tap for directions), phone and notes. Today's sessions are marked <span class="pb-st pb-now">Playing now</span>, <span class="pb-st pb-later">Later today</span> or <span class="pb-st pb-ended">Ended</span>. Orange notes are one-day changes like a closure. Ages 14+ unless noted. Leagues and clinics that need sign-up aren't listed.</p>
-      <p><b>Where it comes from:</b> each center's posted gym schedule from <a href="https://parks.virginiabeach.gov/rec-centers" target="_blank" rel="noopener">Virginia Beach Parks &amp; Recreation</a>. Re-checked monthly; last checked <b id="pb-checked"></b>. Times can change for events and holidays, so call ahead if you're driving far.</p>
-    </div>
     <div id="pb-warn"></div>
     <div class="pb-days" id="pb-days"></div>
+    <div class="pb-intro">
+      <p><b>What this shows:</b> today's and tomorrow's drop-in sessions at VB's seven rec centers. Tap an address for directions. Orange notes are one-day changes. Ages 14+ unless noted; leagues not listed.</p>
+      <p><b>Source:</b> each center's gym schedule from <a href="https://parks.virginiabeach.gov/rec-centers" target="_blank" rel="noopener">VB Parks &amp; Rec</a>, checked monthly (last: <b id="pb-checked"></b>). Times can change, so call ahead.</p>
+    </div>
   </section>
   </div>
 
