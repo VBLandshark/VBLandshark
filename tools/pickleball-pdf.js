@@ -1,4 +1,6 @@
-// Builds pickleball-schedule.pdf (one landscape letter page) from the pickleball data in index.html.
+// Builds pickleball-schedule.pdf (two landscape letter pages: the week, then a map of the centers)
+// from the pickleball data in index.html. The map is tools/vb-rec-centers-map.svg (rebuild it with
+// python3 tools/make_rec_map.py tools/vb-rec-centers-map.svg if a center moves).
 // Usage, from the repo folder:  node tools/pickleball-pdf.js
 // Needs Playwright with Chromium (require('playwright')). The data lives in index.html:
 // PB_CENTERS, PB_SLOTS, PB_EXCEPTIONS, PB_SEASON_END and PB_CHECKED. Edit those, then run this.
@@ -11,6 +13,7 @@ const root = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const a = html.indexOf('const PB_CENTERS'), b = html.indexOf('function renderPickleball');
 if (a < 0 || b < 0) throw new Error('Pickleball data not found in index.html');
+const mapSvg = fs.readFileSync(path.join(__dirname, 'vb-rec-centers-map.svg'), 'utf8').replace(/<svg /, '<svg class="map" ');
 const ctx = {};
 vm.runInNewContext(html.slice(a, b).replace(/\bconst (PB_\w+)/g, 'this.$1'), ctx);
 const {PB_CENTERS: C, PB_SLOTS: SLOTS, PB_EXCEPTIONS: EX, PB_SEASON_END: END, PB_CHECKED: CHECKED} = ctx;
@@ -58,6 +61,11 @@ th { font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:#5d6b
 .sw { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:6px; }
 ul { margin:0; padding-left:16px; font-size:11px; display:grid; gap:3px; }
 footer { margin-top:10px; font-size:10.5px; color:#5d6b62; }
+.p2 { break-before:page; }
+.p2 .wrap { display:grid; grid-template-columns:auto 1fr; gap:28px; align-items:start; margin-top:12px; }
+.map { display:block; height:7.15in; width:auto; }
+.p2 table { font-size:13px; } .p2 td, .p2 th { padding:6px 6px; }
+.p2 .tip { font-size:12px; color:#5d6b62; margin-top:12px; }
 </style></head><body>
 <header><div><h1>VB Rec Center Pickleball<span class="dot"></span></h1>
 <p class="sub">Weekly indoor drop-in pickleball at the seven Virginia Beach Parks &amp; Recreation centers, from each center's posted gym schedule. Leagues and clinics that need sign-up are left out.</p></div>
@@ -70,7 +78,16 @@ footer { margin-top:10px; font-size:10.5px; color:#5d6b62; }
 ${exNotes}
 <li>These schedules are known to run through ${nice(END)}.</li>
 </ul></div></div>
-<footer>Sources: each center's gym schedule at parks.virginiabeach.gov/rec-centers. Parks &amp; Recreation main line: 757-385-1100. Live today/tomorrow view: vblandshark.netlify.app/#pickleball</footer>
+<footer>Sources: each center's gym schedule at parks.virginiabeach.gov/rec-centers. Parks &amp; Recreation main line: 757-385-1100. Live today/tomorrow view: vblandshark.netlify.app/#pickleball · Map of the centers on page 2.</footer>
+<section class="p2">
+<header><div><h1>Where the rec centers are<span class="dot"></span></h1>
+<p class="sub">Virginia Beach Parks &amp; Recreation centers with indoor drop-in pickleball. Dot colors match the weekly schedule.</p></div>
+<div class="stamp">Schedules checked <b>${esc(CHECKED)}</b></div></header>
+<div class="wrap">${mapSvg}
+<div><h3>Addresses &amp; phones</h3><table><thead><tr><th>Center</th><th>Address</th><th>Phone</th></tr></thead><tbody>${centers}</tbody></table>
+<p class="tip">All centers are in Virginia Beach, VA. Main Parks &amp; Recreation line: 757-385-1100.</p>
+<p class="tip">Map: road and shoreline shapes from US Census Bureau TIGER data, simplified; not to exact scale for navigation.</p></div></div>
+</section>
 </body></html>`;
 
 (async () => {
@@ -80,10 +97,10 @@ ${exNotes}
   const p = await browser.newPage();
   await p.goto('file://' + tmp);
   const out = path.join(root, 'pickleball-schedule.pdf');
-  for (const scale of [1, 0.93, 0.86, 0.8, 0.75]) {           // shrink until it fits on one page
+  for (const scale of [1, 0.93, 0.86, 0.8, 0.75]) {           // shrink until the week fits on page 1 (map is page 2)
     await p.pdf({path: out, format: 'Letter', landscape: true, printBackground: true, preferCSSPageSize: true, scale});
     const n = (fs.readFileSync(out, 'latin1').match(/\/Type\s*\/Page[^s]/g) || []).length;
-    if (n <= 1) { console.log(`Wrote ${out} (scale ${scale})`); break; }
+    if (n <= 2) { console.log(`Wrote ${out} (scale ${scale})`); break; }
   }
   await browser.close();
 })();
