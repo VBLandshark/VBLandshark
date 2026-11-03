@@ -78,6 +78,12 @@ window.addEventListener("error", function (e) {
   .obs { padding-bottom:14px; margin-bottom:14px; border-bottom:1px solid var(--line); }
   .obs-main { display:flex; align-items:center; gap:12px; }
   .obs-main .wx { width:46px; height:46px; }
+  .hilo { margin-left:auto; display:flex; gap:14px; text-align:center; font-variant-numeric:tabular-nums; }
+  .hilo:empty { display:none; }
+  .hilo span { display:block; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); }
+  .hilo b { font:600 26px/1.1 var(--display); }
+  .hilo div:first-child b { color:var(--wind); }
+  .hilo div:last-child b { color:var(--rain); }
   .obs .row { gap:8px 18px; }
   .obs .kv span:last-child { font-size:18px; }
   .fc { display:grid; grid-template-columns:30px 1fr; gap:4px 10px; align-items:start; }
@@ -767,6 +773,18 @@ async function loadWeather() {
     + `&daily=uv_index_max,weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant,precipitation_probability_max,sunrise,sunset`
     + `&wind_speed_unit=mph&temperature_unit=fahrenheit&timezone=${encodeURIComponent(TZ)}&forecast_days=3`;
   store.wx = await getJSON(u);
+  fillHiLo();
+}
+
+// Today's high and low (Open-Meteo forecast for today, midnight to midnight), shown beside the current temperature.
+// If it has already been warmer or colder than forecast, the measured reading wins.
+function fillHiLo() {
+  const el = document.getElementById("obs-hilo"), d = store.wx?.daily;
+  if (!el || !d?.temperature_2m_max) return;
+  let hi = d.temperature_2m_max[0], lo = d.temperature_2m_min[0];
+  const now = store.obsTempF;
+  if (now != null) { hi = Math.max(hi, now); lo = Math.min(lo, now); }
+  el.innerHTML = `<div><span>High</span><b>${r0(hi)}°</b></div><div><span>Low</span><b>${r0(lo)}°</b></div>`;
 }
 
 function renderSurf() {
@@ -1840,10 +1858,12 @@ function obsHTML(b) {
   const vis = o.visibility?.value == null ? null : o.visibility.value / 1609;
   const inHg = o.barometricPressure?.value == null ? null : o.barometricPressure.value / 3386.39;
   const hr = new Date(o.timestamp).getHours(), day = hr >= 6 && hr < 18;
+  store.obsTempF = F(o.temperature.value);
   return `<div class="obs">
     <div class="obs-main">${wxIcon(textKind(o.textDescription), day, o.textDescription)}
       <div><div class="big" style="font-size:40px">${r0(F(o.temperature.value))}°</div>
-      <div>${esc(o.textDescription || "")}</div></div></div>
+      <div>${esc(o.textDescription || "")}</div></div>
+      <div class="hilo" id="obs-hilo"></div></div>
     <div class="row">
       <div class="kv"><span>Feels like</span><span>${r0(feels)}°</span></div>
       <div class="kv"><span>Wind</span><span>${wind == null ? "–" : wind < 1 ? "Calm" : r0(wind) + " " + compass(o.windDirection?.value)}${gust ? " g" + r0(gust) : ""}</span></div>
@@ -1860,9 +1880,10 @@ async function loadNWS() {
   const pts = await getJSON(`https://api.weather.gov/points/${LAT},${LON}`, {headers:{Accept:"application/geo+json"}});
   const [f, ob] = await Promise.all([getJSON(pts.properties.forecast, {headers:{Accept:"application/geo+json"}}), loadObs()]);
   const p = f.properties.periods.slice(0, 4);
-  $("forecast").innerHTML = `<h2>Now &amp; forecast</h2>${obsHTML(ob)}<div class="fc-list">`
+  $("forecast").innerHTML = `<h2>Now &amp; forecast</h2>${obsHTML(ob) || `<div class="obs"><div class="hilo" id="obs-hilo"></div></div>`}<div class="fc-list">`
     + p.map(x => `<div class="fc">${wxIcon(textKind(x.shortForecast), x.isDaytime, x.shortForecast)}
         <p class="text"><b>${esc(x.name)}:</b> ${esc(x.shortForecast)}, ${x.isDaytime ? "high" : "low"} ${x.temperature}°${esc(x.temperatureUnit)}. Wind ${esc(x.windDirection)} ${esc(x.windSpeed)}.</p></div>`).join("") + `</div>`;
+  fillHiLo();
 }
 
 async function loadAlerts() {
