@@ -49,8 +49,23 @@ window.addEventListener("error", function (e) {
            border-radius:4px; padding:4px 10px; cursor:pointer; }
   button:focus-visible, a:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
   #alerts { display:grid; gap:6px; margin-bottom:12px; }
-  .alert { background:var(--poor); color:#fff; border-radius:4px; padding:8px 12px; font-weight:600; }
-  .alert small { display:block; font-weight:400; opacity:.9; }
+  /* Weather alerts: one compact line each; tap to open the full NWS text */
+  .alert { --sev:var(--fair); background:var(--panel); border:1px solid var(--line); border-left:4px solid var(--sev); border-radius:6px; font-size:14px; }
+  .alert.sev-high { --sev:var(--poor); }
+  .alert.sev-low { --sev:var(--accent); }
+  .alert summary { list-style:none; cursor:pointer; padding:7px 12px; display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 8px; }
+  .alert summary::-webkit-details-marker { display:none; }
+  .alert summary:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  .al-ev { font-weight:700; color:var(--sev); }
+  .al-what { font-weight:600; }
+  .al-until { color:var(--muted); font-size:13px; }
+  .al-more { margin-left:auto; color:var(--accent); font-size:13px; font-weight:600; white-space:nowrap; }
+  .al-more::after { content:" ▾"; }
+  .alert[open] .al-more::after { content:" ▴"; }
+  .alert[open] .al-more span { display:none; }
+  .al-body { padding:0 12px 10px; font-size:14px; line-height:1.5; }
+  .al-body p { margin:0 0 8px; white-space:pre-line; }
+  .al-meta { color:var(--muted); font-size:12.5px; }
   /* Weather icons and hourly strip */
   .wx { width:30px; height:30px; display:inline-block; vertical-align:middle; flex:none; }
   .wx .sun { fill:var(--sun); } .wx .ray { stroke:var(--sun); stroke-width:2.2; stroke-linecap:round; }
@@ -1861,8 +1876,36 @@ async function loadAlerts() {
   } catch (e) {}
   store.alerts = feats.map(f => f.properties.event);
   renderComfort();
-  $("alerts").innerHTML = feats.map(f => `<div class="alert">${esc(f.properties.event)}
-    <small>${esc(f.properties.headline || "")}</small></div>`).join("");
+  $("alerts").innerHTML = feats.map(alertHTML).join("");
+}
+
+// One alert as a compact, tappable line: type · what it's about · until when. Tap for the full NWS text.
+function alertHTML(f) {
+  const p = f.properties;
+  const sev = /extreme|severe/i.test(p.severity) ? "sev-high" : /minor|unknown/i.test(p.severity) ? "sev-low" : "";
+  const nws = (p.parameters && p.parameters.NWSheadline && p.parameters.NWSheadline[0]) || "";
+  const flat = t => String(t || "").replace(/\s*\n\s*/g, " ").trim();
+  let what = nws ? nws.toLowerCase().replace(/^./, c => c.toUpperCase()) : flat(p.description).replace(/^\*\s*[A-Z ]+\.\.\.\s*/, "").split(/(?<=\.)\s/)[0];
+  if (what.length > 110) what = what.slice(0, 107).replace(/\s+\S*$/, "") + "…";
+  const endISO = p.ends || p.expires;
+  let until = "";
+  if (endISO) {
+    const d = new Date(endISO), now = new Date();
+    const sameDay = d.toDateString() === now.toDateString();
+    until = "until " + (sameDay ? "" : d.toLocaleDateString([], {weekday:"short"}) + " ") + fmtTime(d);
+  }
+  const paras = String(p.description || "").split(/\n\s*\n/).map(t => {
+    const m = flat(t).match(/^\*\s*([A-Z ]+?)\.\.\.\s*(.*)$/);   // NWS "* WHAT...text" sections
+    return m ? `<p><b>${esc(m[1].charAt(0) + m[1].slice(1).toLowerCase())}:</b> ${esc(m[2])}</p>` : `<p>${esc(flat(t))}</p>`;
+  }).join("");
+  const instr = p.instruction ? `<p><b>What to do:</b> ${esc(flat(p.instruction))}</p>` : "";
+  const sent = p.sent ? new Date(p.sent) : null;
+  const issued = sent ? `Issued ${sent.toLocaleDateString([], {weekday:"short"})} ${fmtTime(sent)}` : "";
+  return `<details class="alert ${sev}">
+    <summary><span class="al-ev">${esc(p.event)}</span><span class="al-what">${esc(what)}</span>${until ? `<span class="al-until">${until}</span>` : ""}<span class="al-more"><span>Details</span></span></summary>
+    <div class="al-body">${paras || "<p>No details given.</p>"}${instr}
+      <p class="al-meta">${esc([issued, p.senderName].filter(Boolean).join(" by "))} · <a href="https://forecast.weather.gov/MapClick.php?lat=${LAT}&lon=${LON}" target="_blank" rel="noopener">Open on weather.gov</a></p></div>
+  </details>`;
 }
 
 async function loadWaterTemps() {
