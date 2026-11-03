@@ -498,8 +498,8 @@ window.addEventListener("error", function (e) {
     <button type="button" role="tab" id="tab-surf-tides" data-pane="surf-tides" class="t-sea">Tides &amp; Surf</button>
     <button type="button" role="tab" id="tab-fishing-pane" data-pane="fishing-pane" class="t-fish">Fishing</button>
     <button type="button" role="tab" id="tab-best-times" data-pane="best-times" class="t-best">Surf / Fish Times</button>
-    <button type="button" role="tab" id="tab-food-drink" data-pane="food-drink" class="t-food">Food &amp; Drink</button>
     <button type="button" role="tab" id="tab-pickleball" data-pane="pickleball" class="t-pb">Pickle&shy;ball</button>
+    <button type="button" role="tab" id="tab-food-drink" data-pane="food-drink" class="t-food">Specials</button>
   </nav>
 
   <div class="zone zone-wx pane" id="weather" role="tabpanel" aria-labelledby="tab-weather">
@@ -575,7 +575,7 @@ window.addEventListener("error", function (e) {
   </div>
 
   <div class="zone zone-food pane" id="food-drink" role="tabpanel" aria-labelledby="tab-food-drink" hidden>
-  <h3 class="group">Food &amp; drink</h3>
+  <h3 class="group">Specials</h3>
   <section class="panel">
     <div class="fd-head">
       <h2 style="margin:0">Oceanfront happy hours &amp; daily specials</h2>
@@ -2304,7 +2304,7 @@ renderPickleball();
 setInterval(renderPickleball, 60 * 1000);
 
 // ---- Panes: one section at a time, remembered per browser and linkable by #name ----
-const PANES = ["weather", "surf-tides", "fishing-pane", "best-times", "food-drink", "pickleball"];
+const PANES = ["weather", "surf-tides", "fishing-pane", "best-times", "pickleball", "food-drink"];
 function showPane(name, push) {
   if (!PANES.includes(name)) name = "weather";
   PANES.forEach(p => { const el = document.getElementById(p); if (el) el.hidden = p !== name; });
