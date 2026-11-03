@@ -233,8 +233,9 @@ window.addEventListener("error", function (e) {
   .cf-row .pill { white-space:normal; text-align:left; font-size:12.5px; padding:3px 10px; }
   .cf-why { font-size:12.5px; color:var(--muted); }
   .mascot { margin:16px 0 0; padding:8px; width:min(100%, 320px); }
-  .fd-phone { font-size:13px; color:var(--muted); margin-top:4px; }
-  .fd-sp .fd-phone { display:inline; margin:0; white-space:nowrap; }
+  .fd-phone { font-size:13px; color:var(--muted); margin-top:4px; display:flex; flex-direction:column; gap:1px; min-width:0; }
+  .fd-phone > span { white-space:nowrap; }
+  .fd-sp .fd-phone { margin-top:2px; }
   .fd-tel { color:var(--accent); text-decoration:none; white-space:nowrap; font-variant-numeric:tabular-nums; }
   .copyleft { margin:8px 0 0; }
   .cl { display:inline-block; transform:scaleX(-1); }
@@ -2170,6 +2171,8 @@ const DAY_SPECIALS = [
 ];
 // Phone numbers become tap-to-call links.
 const telLinks = t => esc(t || "").replace(/\((\d{3})\) (\d{3})-(\d{4})/g, (m, a, b, c) => `<a class="fd-tel" href="tel:+1${a}${b}${c}">${m}</a>`);
+// Places with more than one number ("24th: ... · 33rd: ...") get one number per line.
+const phoneBlock = t => `<div class="fd-phone">${String(t).split(/\s+·\s+/).map(n => `<span>☎ ${telLinks(n)}</span>`).join("")}</div>`;
 const phoneFor = place => (HAPPY_HOURS.find(h => h.name === place) || {}).phone;
 const DAY_NAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 function renderFood() {
@@ -2182,13 +2185,13 @@ function renderFood() {
   $("fd-hh").innerHTML = HAPPY_HOURS.map(h => `<div class="fd-item${h.days.includes(dow) ? "" : " fd-off"}">
       <div class="fd-top"><b>${esc(h.name)}</b><span class="fd-when">${esc(h.when)}</span></div>
       <div class="fd-where">${esc(h.where)}${h.src === "guide" ? " · from tourism guide" : ""}${h.days.includes(dow) ? "" : " · not today"}</div>
-      <div class="fd-deals">${esc(h.deals)}</div>${h.phone ? `<div class="fd-phone">☎ ${telLinks(h.phone)}</div>` : ""}</div>`).join("");
+      <div class="fd-deals">${esc(h.deals)}</div>${h.phone ? phoneBlock(h.phone) : ""}</div>`).join("");
   const order = [0,1,2,3,4,5,6].map(i => (dow + i) % 7);
   $("fd-days").innerHTML = order.map(d => {
     const list = DAY_SPECIALS.filter(x => x.days.includes(d) && x.days.length < 5);
     const wk = DAY_SPECIALS.filter(x => x.days.includes(d) && x.days.length >= 5);
     return `<div class="fd-day${d === dow ? " fd-now" : ""}"><div class="fd-dn">${DAY_NAMES[d]}${d === dow ? " · today" : ""}</div>
-      ${list.concat(wk).map(x => `<div class="fd-sp"><b>${esc(x.place)}</b> ${esc(x.what)}${phoneFor(x.place) ? ` <span class="fd-phone">☎ ${telLinks(phoneFor(x.place))}</span>` : ""}</div>`).join("") || `<div class="fd-sp fd-none">Nothing listed</div>`}</div>`;
+      ${list.concat(wk).map(x => `<div class="fd-sp"><b>${esc(x.place)}</b> ${esc(x.what)}${phoneFor(x.place) ? phoneBlock(phoneFor(x.place)) : ""}</div>`).join("") || `<div class="fd-sp fd-none">Nothing listed</div>`}</div>`;
   }).join("");
 }
 renderFood();
