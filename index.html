@@ -33,7 +33,7 @@ window.addEventListener("error", function (e) {
   :root { color-scheme:dark;
     --bg:#0c1a20; --panel:#12252d; --fg:#e3eef1; --muted:#8ea7b0; --line:#21404b;
     --accent:#4fc4cc; --wind:#f0a052; --land:#1e3226; --sun:#f5c451; --cloud:#8aa0a9; --rain:#6aaef0; --sand:#4d4632; --sea1:#16343d; --sea2:#0f4a57;
-    --z-wx:#132233; --z-sea:#0f2a2f; --z-fish:#1a2a1c; --z-best:#2a2418; --z-food:#2c1d1b; --good:#4cc27d; --fair:#e0a845; --poor:#e46a6a;
+    --z-wx:#132233; --z-sea:#0f2a2f; --z-fish:#1a2a1c; --z-best:#2a2418; --z-food:#2c1d1b; --z-pb:#221c2e; --good:#4cc27d; --fair:#e0a845; --poor:#e46a6a;
     --display:"Barlow Condensed", "Arial Narrow", sans-serif;
     --body:"Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif;
   }
@@ -261,6 +261,30 @@ window.addEventListener("error", function (e) {
   .tabs .t-fish[aria-selected="true"] { background:var(--z-fish); } .tabs .t-best[aria-selected="true"] { background:var(--z-best); }
   .tabs .t-food[aria-selected="true"] { background:var(--z-food); }
   .zone-food { background:var(--z-food); }
+  .tabs .t-pb[aria-selected="true"] { background:var(--z-pb); }
+  .zone-pb { background:var(--z-pb); }
+  .zone-pb h3.group { color:#c9b3f0; }
+  /* Pickleball tab */
+  .pb-head { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px 16px; margin-bottom:14px; }
+  .pb-pdf { display:inline-flex; align-items:center; gap:8px; font-weight:600; font-size:14px; color:var(--panel); background:#c9b3f0;
+            border-radius:999px; padding:7px 14px; text-decoration:none; white-space:nowrap; }
+  .pb-pdf:focus-visible { outline:2px solid var(--fg); outline-offset:2px; }
+  .pb-days { display:grid; gap:20px; grid-template-columns:repeat(auto-fit, minmax(min(100%, 380px), 1fr)); }
+  .pb-dh { margin:0 0 8px; font:600 22px var(--display); display:flex; align-items:baseline; gap:10px; }
+  .pb-dh small { font:600 12.5px var(--body); color:var(--muted); }
+  .pb-slot { display:grid; grid-template-columns:118px 1fr; gap:2px 12px; padding:10px 0 10px 10px; border-bottom:1px solid var(--line); border-left:4px solid var(--c); }
+  .pb-slot.pb-done { opacity:.5; }
+  .pb-t { font:600 17px/1.2 var(--display); font-variant-numeric:tabular-nums; }
+  .pb-st { font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; }
+  .pb-st.now { color:var(--good); } .pb-st.later { color:var(--muted); } .pb-st.done { color:var(--muted); }
+  .pb-c { font-weight:700; font-size:15.5px; color:var(--c); }
+  .pb-a { font-size:13px; color:var(--muted); }
+  .pb-a a { color:var(--muted); }
+  .pb-n { font-size:13px; margin-top:2px; }
+  .pb-n.warn { color:var(--fair); }
+  .pb-none { color:var(--muted); padding:10px 0; }
+  .pb-warn { background:var(--bg); border:1px solid var(--fair); color:var(--fg); border-radius:6px; padding:8px 12px; font-size:14px; margin-bottom:14px; }
+  @media (max-width:520px) { .pb-slot { grid-template-columns:1fr; } }
   .fd-head { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:baseline; gap:6px 16px; margin-bottom:14px; }
   .fd-date { font-size:13px; font-weight:600; color:var(--fg); background:var(--bg); border:1px solid var(--line); border-radius:999px; padding:3px 10px; }
   .fd-unpaid { margin:-6px 0 14px; font-size:13px; color:var(--muted); font-style:italic; }
@@ -293,10 +317,10 @@ window.addEventListener("error", function (e) {
     .stamp button { padding:3px 8px; font-size:12px; }
     .tabs { margin-top:2px; padding-top:4px; }
   }
-  /* Phones: all five tabs in one row, labels wrap to two lines */
+  /* Phones: all six tabs in one row, labels wrap to two lines */
   @media (max-width:640px) {
-    .tabs { display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:3px; overflow:visible; margin-left:-4px; margin-right:-4px; }
-    .tabs button { padding:9px 2px; font-size:12.5px; line-height:1.15; white-space:normal; border-radius:8px 8px 0 0; min-height:48px; }
+    .tabs { display:grid; grid-template-columns:repeat(6, minmax(0, 1fr)); gap:3px; overflow:visible; margin-left:-4px; margin-right:-4px; }
+    .tabs button { padding:9px 1px; font-size:12px; line-height:1.15; white-space:normal; hyphens:manual; border-radius:8px 8px 0 0; min-height:48px; }
   }
   .pane .group { display:none; }
   .pane { padding-top:16px; }
@@ -475,6 +499,7 @@ window.addEventListener("error", function (e) {
     <button type="button" role="tab" id="tab-fishing-pane" data-pane="fishing-pane" class="t-fish">Fishing</button>
     <button type="button" role="tab" id="tab-best-times" data-pane="best-times" class="t-best">Best Times</button>
     <button type="button" role="tab" id="tab-food-drink" data-pane="food-drink" class="t-food">Food &amp; Drink</button>
+    <button type="button" role="tab" id="tab-pickleball" data-pane="pickleball" class="t-pb">Pickle&shy;ball</button>
   </nav>
 
   <div class="zone zone-wx pane" id="weather" role="tabpanel" aria-labelledby="tab-weather">
@@ -569,6 +594,19 @@ window.addEventListener("error", function (e) {
       </div>
     </div>
     <p class="note">Specials change often, especially off-season. Confirm with the restaurant before you go. Sources: each restaurant's own site where available (CP Shuckers, The Shack on 8th, Jumpin' Shrimp, Hemingway's), otherwise Visit Virginia Beach's happy hour guide (Big Sam's, The Atlantic on Pacific, Waterman's, Dough Boys), which is undated.</p>
+  </section>
+  </div>
+
+  <div class="zone zone-pb pane" id="pickleball" role="tabpanel" aria-labelledby="tab-pickleball" hidden>
+  <h3 class="group">Pickleball</h3>
+  <section class="panel">
+    <div class="pb-head">
+      <h2 style="margin:0">VB rec center pickleball · today &amp; tomorrow</h2>
+      <a class="pb-pdf" href="pickleball-schedule.pdf" target="_blank" rel="noopener">Full week, all centers (PDF)</a>
+    </div>
+    <div id="pb-warn"></div>
+    <div class="pb-days" id="pb-days"></div>
+    <p class="note">Indoor drop-in play at Virginia Beach Parks &amp; Recreation centers, from each center's fall 2026 gym schedule (checked Nov 1, 2026). Most sessions are ages 14+; Kempsville weekday sessions are 18+. Leagues and clinics that need sign-up aren't listed. Times can change for events, rentals, maintenance and holidays, so call ahead if you're driving far. Schedules: <a href="https://parks.virginiabeach.gov/rec-centers" target="_blank" rel="noopener">parks.virginiabeach.gov/rec-centers</a>.</p>
   </section>
   </div>
 
@@ -2196,8 +2234,77 @@ function renderFood() {
 }
 renderFood();
 
+// ---- Pickleball: today's and tomorrow's drop-in sessions at VB rec centers (fall 2026 gym schedules) ----
+const PB_CENTERS = {
+  bay: {name:"Bayside",       addr:"4500 First Court Rd",  phone:"(757) 385-5930", color:"#7fb1ec"},
+  bow: {name:"Bow Creek",     addr:"3427 Club House Rd",   phone:"(757) 385-5960", color:"#c79be6"},
+  gn:  {name:"Great Neck",    addr:"2521 Shorehaven Dr",   phone:"(757) 385-5940", color:"#f09a62"},
+  kv:  {name:"Kempsville",    addr:"800 Monmouth Ln",      phone:"(757) 385-5970", color:"#5fd0bf"},
+  pa:  {name:"Princess Anne", addr:"1400 Nimmo Pkwy",      phone:"(757) 385-5950", color:"#ef8ca6"},
+  st:  {name:"Seatack",       addr:"141 S Birdneck Rd",    phone:"(757) 385-5920", color:"#a8cc5e"},
+  wf:  {name:"Williams Farm", addr:"5252 Learning Cir",    phone:"(757) 385-2950", color:"#d6ad75"},
+};
+// [weekday 0=Sun..6=Sat, center, start, end, note]
+const PB_SLOTS = [
+  [1,"wf","6:00","12:00","Gym 2"], [1,"gn","8:30","11:30","Gym 1"], [1,"st","8:30","11:00",""], [1,"pa","17:30","21:00",""], [1,"bow","17:45","21:00","Gym 2"],
+  [2,"kv","5:00","11:45","18+ · Gym 2"], [2,"pa","5:00","8:45",""], [2,"bow","6:00","8:30","Gym 2"], [2,"bay","8:00","12:30","Gym 1 till 11:30 · Gym 2 till 12:30"], [2,"st","8:00","13:00","!Not on the city's summary page; call to confirm"], [2,"pa","12:30","15:45",""], [2,"st","18:00","21:00","!Not on the city's summary page; call to confirm"],
+  [3,"wf","6:00","12:00","Gym 2"], [3,"gn","8:30","11:30","Gym 1"], [3,"st","8:30","13:00",""],
+  [4,"kv","5:00","11:45","18+ · Gym 2, both gyms from 8:30"], [4,"bow","6:00","8:30","Gym 2"], [4,"bay","8:00","12:30","Gym 1 till 11:30 · Gym 2 till 12:30"], [4,"st","11:00","14:00",""], [4,"pa","12:30","15:45",""], [4,"st","18:00","21:00",""],
+  [5,"wf","6:00","12:00","Gym 2"], [5,"st","8:30","13:00",""], [5,"gn","14:00","17:00","Gym 2"], [5,"bay","17:30","20:00","Gym 1"],
+  [6,"bay","9:00","11:30","Gyms 1 & 2"], [6,"bow","9:00","12:00","Gym 2"], [6,"kv","9:00","11:45","Gym 2"], [6,"st","9:00","12:00",""],
+  [0,"pa","11:00","13:00",""], [0,"st","11:00","13:00",""], [0,"kv","14:00","16:30","Gym 2"],
+];
+// Date-specific changes from the gym schedules: cancel a session, or add a warning to it.
+const PB_EXCEPTIONS = [
+  {date:"2026-11-21", c:"kv", cancel:"Gym closed Nov 19 (noon) to Nov 23"},
+  {date:"2026-11-22", c:"kv", cancel:"Gym closed Nov 19 (noon) to Nov 23"},
+  {date:"2026-11-14", c:"st", start:"11:00", warn:"Starts at 11 today: gym closed 9–11 AM for a clinic"},
+  {date:"2026-11-14", c:"bay", warn:"One side of the gym only today"},
+  {date:"2026-12-05", c:"bay", warn:"One side of the gym only today"},
+];
+const PB_SEASON_END = "2026-12-13";   // fall gym schedules run to mid-December
+function renderPickleball() {
+  const now = new Date();
+  const ymd = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  const at = (d, hm) => { const [h, m] = hm.split(":").map(Number); const x = new Date(d); x.setHours(h, m, 0, 0); return x; };
+  const tfmt = hm => { let [h, m] = hm.split(":").map(Number); const ap = h >= 12 ? "PM" : "AM"; h = h % 12 || 12; return h + (m ? ":" + String(m).padStart(2, "0") : "") + " " + ap; };
+  const span = (a, b) => { const A = tfmt(a), B = tfmt(b); return A.slice(-2) === B.slice(-2) ? A.slice(0, -3) + "–" + B : A + "–" + B; };
+  const mins = hm => { const [h, m] = hm.split(":").map(Number); return h * 60 + m; };
+  const map = a => "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(a + ", Virginia Beach, VA");
+  $("pb-warn").innerHTML = ymd(now) > PB_SEASON_END
+    ? `<div class="pb-warn">The fall gym schedules these times come from ended in mid-December. Winter times may differ, so check with the center before you go.</div>` : "";
+  const day = (d, label) => {
+    const key = ymd(d), isToday = key === ymd(now);
+    const list = PB_SLOTS.filter(x => x[0] === d.getDay()).sort((a, b) => mins(a[2]) - mins(b[2]) || mins(a[3]) - mins(b[3]));
+    const rows = list.map(([, c, a, b, note]) => {
+      const C = PB_CENTERS[c], ex = PB_EXCEPTIONS.filter(e => e.date === key && e.c === c);
+      const late = ex.find(e => e.start);
+      if (late) a = late.start;
+      const cancel = ex.find(e => e.cancel), warns = ex.filter(e => e.warn).map(e => e.warn);
+      let st = "", cls = "";
+      if (cancel) { st = `<span class="pb-st done">Cancelled</span>`; cls = " pb-done"; }
+      else if (isToday && now >= at(d, b)) { st = `<span class="pb-st done">Ended</span>`; cls = " pb-done"; }
+      else if (isToday && now >= at(d, a)) st = `<span class="pb-st now">Playing now</span>`;
+      else if (isToday) st = `<span class="pb-st later">Later today</span>`;
+      const notes = [];
+      if (cancel) notes.push(`<div class="pb-n warn">${esc(cancel.cancel)}</div>`);
+      warns.forEach(w => notes.push(`<div class="pb-n warn">${esc(w)}</div>`));
+      if (note) notes.push(note.startsWith("!") ? `<div class="pb-n warn">${esc(note.slice(1))}</div>` : `<div class="pb-n">${esc(note)}</div>`);
+      return `<div class="pb-slot${cls}" style="--c:${C.color}">
+        <div><div class="pb-t">${span(a, b)}</div>${st}</div>
+        <div><div class="pb-c">${esc(C.name)}</div>
+          <div class="pb-a"><a href="${map(C.addr)}" target="_blank" rel="noopener">${esc(C.addr)}</a> · ${telLinks(C.phone)}</div>${notes.join("")}</div></div>`;
+    }).join("");
+    return `<div><h4 class="pb-dh">${label}<small>${d.toLocaleDateString([], {weekday:"long", month:"short", day:"numeric"})}</small></h4>
+      ${rows || `<div class="pb-none">No drop-in pickleball listed.</div>`}</div>`;
+  };
+  $("pb-days").innerHTML = day(now, "Today") + day(new Date(addDays(now, 1)), "Tomorrow");
+}
+renderPickleball();
+setInterval(renderPickleball, 60 * 1000);
+
 // ---- Panes: one section at a time, remembered per browser and linkable by #name ----
-const PANES = ["weather", "surf-tides", "fishing-pane", "best-times", "food-drink"];
+const PANES = ["weather", "surf-tides", "fishing-pane", "best-times", "food-drink", "pickleball"];
 function showPane(name, push) {
   if (!PANES.includes(name)) name = "weather";
   PANES.forEach(p => { const el = document.getElementById(p); if (el) el.hidden = p !== name; });
