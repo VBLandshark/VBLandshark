@@ -1,0 +1,22 @@
+# Daily check that vblandshark.netlify.app and all of its live data sources still work.
+# Problems open one GitHub issue (GitHub emails the owner); it closes itself when all checks pass again.
+name: Site check
+on:
+  schedule:
+    - cron: "47 10 * * *"   # 5:47 AM EST / 6:47 AM EDT
+  workflow_dispatch:
+permissions:
+  contents: read
+  issues: write
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node tools/site-check.js
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

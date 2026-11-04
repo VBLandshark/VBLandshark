@@ -1,0 +1,22 @@
+# Good-surf alert: opens a "GOOD SURF NOTICE" issue (GitHub emails the owner) when surf is 4 ft+ and clean.
+name: Surf alert
+on:
+  schedule:
+    - cron: "23 10 * * *"   # 5:23 AM EST / 6:23 AM EDT: checks today
+    - cron: "23 21 * * *"   # 4:23 PM EST / 5:23 PM EDT: checks tomorrow
+  workflow_dispatch:
+permissions:
+  contents: read
+  issues: write
+jobs:
+  surf:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node tools/surf-alert.js
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
