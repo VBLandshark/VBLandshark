@@ -583,7 +583,7 @@ window.addEventListener("error", function (e) {
   <section class="panel">
     <div class="fd-head">
       <h2 style="margin:0">Oceanfront happy hours &amp; daily specials</h2>
-      <span class="fd-date">Info pulled Nov 5, 2026</span>
+      <span class="fd-date">Info pulled Nov 6, 2026</span>
     </div>
     <p class="fd-unpaid">Not paid or sponsored. No restaurant asked to be listed or paid for placement; these are public specials gathered for information only.</p>
     <div id="fd-today"></div>
@@ -597,7 +597,7 @@ window.addEventListener("error", function (e) {
         <div id="fd-days"></div>
       </div>
     </div>
-    <p class="note">Specials change often, especially off-season. Confirm with the restaurant before you go. Sources: each restaurant's own site where available (CP Shuckers, The Shack on 8th, Jumpin' Shrimp, Hemingway's, via its hotel's dining page), otherwise Visit Virginia Beach's "9 happy hours to try in VA Beach" guide, last updated June 2026 (Big Sam's, The Atlantic on Pacific, Waterman's, Dough Boys, Hunt Room). Phone numbers come from the restaurants' own pages or Visit Virginia Beach listings.</p>
+    <p class="note">Specials change often, especially off-season. Confirm with the restaurant before you go. Sources: each restaurant's own site where available (CP Shuckers, The Shack on 8th, Jumpin' Shrimp, Hunt Room, and Hemingway's via its hotel's dining page), otherwise Visit Virginia Beach's "9 happy hours to try in VA Beach" guide, last updated June 2026 (Big Sam's, The Atlantic on Pacific, Waterman's, Dough Boys). Phone numbers come from the restaurants' own pages or Visit Virginia Beach listings.</p>
   </section>
   </div>
 
@@ -2192,7 +2192,7 @@ function loadRadar() {
 loadRadar();
 setInterval(loadRadar, 5 * 60 * 1000);
 
-// ---- Food & drink: oceanfront happy hours and daily specials (pulled Nov 5, 2026) ----
+// ---- Food & drink: oceanfront happy hours and daily specials (pulled Nov 6, 2026) ----
 // days: 0 = Sunday … 6 = Saturday
 const HAPPY_HOURS = [
   {name:"CP Shuckers", phone:"(757) 425-8676", where:"Oceanfront", days:[1,2,3,4,5], when:"Mon–Fri 3–7 PM", deals:"Drink and food specials (prices not posted)", src:"official"},
@@ -2200,9 +2200,9 @@ const HAPPY_HOURS = [
   {name:"The Atlantic on Pacific", phone:"(757) 422-2122", where:"Pacific Ave", days:[0,1,2,3,4,5,6], when:"Daily 3–6 PM", deals:"$1 clams and oysters · wine, beer and cocktails $9 or less", src:"guide"},
   {name:"Waterman's Surfside Grille", phone:"(757) 428-3644", where:"415 Atlantic Ave", days:[1,2,3,4], when:"Mon–Thu 2–5 PM", deals:"$5 Orange Crush · $5 drafts · $8 seafood plates", src:"guide"},
   {name:"Dough Boys Pizza", phone:"24th: (757) 425-7108 · 33rd: (757) 747-2511", where:"24th & 33rd on Atlantic", days:[1,2,3,4,5], when:"Mon–Fri 4–5:30 PM", deals:"$5 drafts, wine and wells · $5 fries or mac 'n' cheese bites", src:"guide"},
-  {name:"Hunt Room (Cavalier Hotel)", phone:"(757) 333-6727", where:"4200 Atlantic Ave", days:[1,2,3,4,5], when:"Mon–Fri 4–6 PM", deals:"$5 drafts · $6 wells, wine and bartender's-choice cocktails · $7 snacks and shareables", src:"guide"},
+  {name:"Hunt Room (Cavalier Hotel)", phone:"(757) 333-6727", where:"4200 Atlantic Ave", days:[1,2,3,4,5], when:"Mon–Fri 4–6 PM", deals:"$5 drafts and Coastal Cocktails · $6 wine, wells and select specialty cocktails · $7 appetizers", src:"official"},
   {name:"Hemingway's", phone:"Bar: (757) 491-1500 · Restaurant: (757) 419-2544", where:"2101 Atlantic Ave", days:[0,1,2,3,4,5,6], when:"Daily 4–6 PM", deals:"Happy hour menu (prices not posted)", src:"official"},
-  {name:"The Shack on 8th", phone:"(757) 319-5146", where:"712 Atlantic Ave", days:[5,0], when:"Fri 4–7 PM · Sun from noon", deals:"Prices not posted", src:"official"},
+  {name:"The Shack on 8th", phone:"(757) 319-5146", where:"712 Atlantic Ave", days:[1,2,3,4,5,0], when:"Mon–Fri 4–7 PM · Sun from 3 PM", deals:"Prices not posted", src:"official"},
   {name:"Jumpin' Shrimp", phone:"(757) 222-6532", where:"1211 Atlantic Ave", days:[0,1,2,3,4,5,6], when:"Daily 7–11 AM", deals:"$5 Bloody Marys and mimosas", src:"official"},
 ];
 const DAY_SPECIALS = [
