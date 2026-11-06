@@ -1551,8 +1551,7 @@ function renderComfort() {
     swhy.push(`water ${r0(water)}°`, `waves ${r1(waves)} ft`);
   }
   el.innerHTML = `<div class="cf-row"><span class="cf-k">Sitting on the beach</span>${pill(beach)}<span class="cf-why">${esc(bwhy.join(" · "))}</span></div>
-    <div class="cf-row"><span class="cf-k">Swimming</span>${pill(swim)}<span class="cf-why">${esc(swhy.join(" · "))}</span></div>
-    <p class="note" style="margin-top:6px">General guide. Swim near a lifeguard and watch for rip currents.</p>`;
+    <div class="cf-row"><span class="cf-k">Swimming</span>${pill(swim)}<span class="cf-why">${esc(swhy.join(" · "))}</span></div>`;
 }
 function renderOutlook() {
   const m = store.marine.daily, w = store.wx.daily;
