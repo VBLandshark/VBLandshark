@@ -382,6 +382,7 @@ window.addEventListener("error", function (e) {
   .dial svg { width:124px; height:124px; display:block; }
   .dial figcaption { font-size:12px; color:var(--muted); text-align:center; }
   .dial figcaption b { display:block; font:600 18px var(--display); color:var(--fg); }
+  .dial .d-extra { display:block; font:600 14px var(--body); color:var(--fg); margin-top:2px; }
   .d-face { fill:var(--bg); stroke:var(--line); stroke-width:1.5; }
   .d-land { fill:var(--land); }
   .d-shore { stroke:var(--muted); stroke-width:1; stroke-dasharray:3 3; }
@@ -677,7 +678,7 @@ const pill = q => q ? `<span class="pill p-${q[1]}">${esc(q[0])}</span>` : "";
 // ---- Graphics ----
 let dialId = 0;
 // Compass dial. `from` is the direction the swell/wind comes FROM; the arrow points where it travels.
-function dial(from, kind, title, detail) {
+function dial(from, kind, title, detail, extra) {
   if (from == null) return "";
   const id = "dc" + (++dialId);
   let ticks = "";
@@ -700,7 +701,7 @@ function dial(from, kind, title, detail) {
         <path class="d-head" d="M0 40 L-9 22 L9 22 Z"/>
       </g>
     </svg>
-    <figcaption>${esc(title)}<b>from ${compass(from)} ${detail ? "· " + esc(detail) : ""}</b></figcaption>
+    <figcaption>${esc(title)}<b>from ${compass(from)} ${detail ? "· " + esc(detail) : ""}</b>${extra ? `<span class="d-extra">${esc(extra)}</span>` : ""}</figcaption>
   </figure>`;
 }
 // Small inline arrow for tables (points the way it travels).
@@ -1292,7 +1293,7 @@ function renderWind() {
           <div class="kv"><span>Humidity</span><span>${r0(c.relative_humidity_2m)}%</span></div>
         </div>
       </div>
-      ${dial(c.wind_direction_10m, "wind", "Wind", r0(c.wind_speed_10m) + " mph")}
+      ${dial(c.wind_direction_10m, "wind", "Wind", r0(c.wind_speed_10m) + " mph", c.wind_speed_10m == null ? "" : r0(c.wind_speed_10m * 0.868976) + " knots")}
     </div>
     <div class="comfort" id="comfort"></div>`;
   renderWindFlag();
