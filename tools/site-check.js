@@ -162,12 +162,47 @@ for (const b of BUOYS) {
   });
 }
 
+// Count the non-transparent pixels in a PNG (8-bit RGBA or palette), so we can tell whether radar shows any rain.
+function pngColored(buf) {
+  const zlib = require("zlib");
+  let pos = 8, w = 0, h = 0, type = 0, depth = 0, trns = null; const idat = [];
+  while (pos < buf.length) {
+    const len = buf.readUInt32BE(pos), kind = buf.toString("ascii", pos + 4, pos + 8), d = buf.subarray(pos + 8, pos + 8 + len);
+    if (kind === "IHDR") { w = d.readUInt32BE(0); h = d.readUInt32BE(4); depth = d[8]; type = d[9]; }
+    else if (kind === "tRNS") trns = d;
+    else if (kind === "IDAT") idat.push(d);
+    pos += 12 + len;
+  }
+  if (depth !== 8 || (type !== 6 && type !== 3)) return null;
+  const bpp = type === 6 ? 4 : 1, stride = w * bpp, raw = zlib.inflateSync(Buffer.concat(idat));
+  let prev = Buffer.alloc(stride), n = 0;
+  for (let y = 0; y < h; y++) {
+    const f = raw[y * (stride + 1)], line = Buffer.from(raw.subarray(y * (stride + 1) + 1, (y + 1) * (stride + 1)));
+    for (let i = 0; i < stride; i++) {
+      const a = i >= bpp ? line[i - bpp] : 0, b = prev[i], c = i >= bpp ? prev[i - bpp] : 0;
+      const p = a + b - c, pa = Math.abs(p - a), pb = Math.abs(p - b), pc = Math.abs(p - c);
+      line[i] = (line[i] + [0, a, b, (a + b) >> 1, pa <= pb && pa <= pc ? a : pb <= pc ? b : c][f]) & 255;
+    }
+    for (let x = 0; x < w; x++) {
+      const alpha = type === 6 ? line[x * 4 + 3] : (trns && line[x] < trns.length ? trns[line[x]] : 255);
+      if (alpha > 0) n++;
+    }
+    prev = line;
+  }
+  return {n, total: w * h};
+}
 add("NOAA radar map (conus_bref_qcd)", async () => {
   const cap = await text(RADAR_URL.split("?")[0] + "?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetCapabilities");
   must(cap.includes("conus_bref_qcd"), "layer conus_bref_qcd not listed");
   const r = await req(RADAR_URL);
   must((r.headers.get("content-type") || "").startsWith("image/"), `map returned ${r.headers.get("content-type")}`);
-  return "layer listed, map image OK";
+  const local = pngColored(Buffer.from(await r.arrayBuffer()));
+  // Whole lower 48: somewhere in the US is nearly always raining, so an empty map here means the layer is stale or broken.
+  const usUrl = RADAR_URL.replace(/BBOX=[^&]*/, "BBOX=24,-126,50,-66").replace(/WIDTH=\d+/, "WIDTH=600").replace(/HEIGHT=\d+/, "HEIGHT=260");
+  const us = pngColored(Buffer.from(await (await req(usUrl)).arrayBuffer()));
+  const pct = o => o ? (100 * o.n / o.total).toFixed(1) + "%" : "unreadable";
+  must(!us || us.n > 0, "radar shows no rain anywhere in the lower 48 (layer may be stale)");
+  return `map OK · rain on ${pct(local)} of the local map, ${pct(us)} of the US map`;
 });
 add("USGS topo map", async () => {
   const r = await req(TOPO_URL);
