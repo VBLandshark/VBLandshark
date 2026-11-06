@@ -202,6 +202,8 @@ window.addEventListener("error", function (e) {
   .suit-lbl { fill:var(--muted); font:600 8.5px var(--body); text-anchor:middle; }
   .suit-lbl.on { fill:var(--fg); }
   .suit-name { font:600 22px/1.15 var(--display); margin:4px 0 2px; }
+  .surf-rep:not(:empty) { margin-top:12px; padding:10px 12px; border-radius:8px; background:rgba(79,196,204,.1); border-left:3px solid var(--accent); }
+  .surf-rep p { margin:0; font-size:14.5px; } .surf-rep p.note { margin-top:4px; font-size:12px; }
   .gear { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
   .gear span { font-size:12px; padding:2px 8px; border-radius:999px; background:var(--bg); border:1px solid var(--line); }
   .divider { border-top:1px solid var(--line); margin:14px 0 12px; }
@@ -1301,7 +1303,30 @@ function renderUvSuit() {
     <p class="note" style="margin-top:4px">${cat[3]} Water and sand reflect extra UV.</p>
     <div class="divider"></div>
     <h2 style="margin-bottom:4px">What to wear in the water</h2>
-    ${suitHTML}`;
+    ${suitHTML}
+    <div class="surf-rep" id="surf-report"></div>`;
+  showSurfReport();
+}
+
+// ---- Surf report: a short read of the Surfchex pier cam (pier to the 1st Street jetty), written by a scheduled check
+// and kept in surf-report.json in the GitHub repo, so updating it doesn't need a new site build. ----
+const SURF_REPORT_URL = "https://raw.githubusercontent.com/VBLandshark/vblandshark/main/surf-report.json";
+async function loadSurfReport() {
+  try { store.surfReport = await getJSON(`${SURF_REPORT_URL}?t=${Math.floor(Date.now() / 3e5)}`); } catch (e) { store.surfReport = null; }
+  showSurfReport();
+}
+function showSurfReport() {
+  const el = $("surf-report"), r = store.surfReport;
+  if (!el) return;
+  const t = r && r.time ? new Date(r.time) : null;
+  const age = t ? (Date.now() - t) / 36e5 : Infinity;
+  if (!r || !r.looks || !(age < 72)) { el.innerHTML = ""; return; }
+  const when = age < 20 && t.toDateString() === new Date().toDateString() ? fmtTime(t) : `${t.toLocaleDateString([], {weekday:"short"})} ${fmtTime(t)}`;
+  const line = age < 3
+    ? `Right now the surf between the pier and the jetty looks ${esc(r.looks)}`
+    : `At ${when} the surf between the pier and the jetty looked ${esc(r.looks)}`;
+  el.innerHTML = `<p><b>Surf report:</b> ${line}</p>
+    <p class="note">From the Surfchex pier cam, which sweeps from the pier to the 1st Street jetty · checked ${when}</p>`;
 }
 
 // ---- Waves: animated wave train (time view) + 3-day height/period chart ----
@@ -2272,6 +2297,7 @@ async function loadAll() {
     loadMarineText().catch(e => fail("marine", "Coastal marine forecast · Cape Henry to Currituck", e)),
     loadNWS().catch(e => fail("forecast", "Now &amp; forecast", e)),
     loadAlerts().catch(() => {}),
+    loadSurfReport(),
     loadBuoys().catch(e => fail("buoys", "Offshore buoys", e)),
     Promise.all([loadWaterTemps(), both.catch(() => {})]).then(([t]) => renderFishing(t)),
   ];

@@ -1,0 +1,25 @@
+# Grabs frames from the Surfchex pier cam for the surf report. Run on demand by the scheduled surf-report task.
+# Frames are pushed to the cam-frames branch (never main), with [skip netlify] so no site build is triggered.
+name: Pier cam frames
+on: workflow_dispatch
+permissions:
+  contents: write
+jobs:
+  frames:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm i --no-save playwright@1.48.2 && npx playwright install --with-deps chromium
+      - run: node tools/pier-cam.js
+      - run: |
+          git config user.name pier-cam-bot
+          git config user.email pier-cam@users.noreply.github.com
+          git checkout --orphan cam-frames
+          git rm -rq --cached .
+          git add -f cam-frames
+          git commit -qm "Pier cam frames $(date -u +%FT%TZ) [skip netlify]"
+          git push -f origin cam-frames
