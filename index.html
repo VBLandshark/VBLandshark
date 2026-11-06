@@ -498,7 +498,15 @@ window.addEventListener("error", function (e) {
   .months button[aria-selected="true"] { background:var(--accent); border-color:var(--accent); color:var(--panel); }
   .fish-grid { display:grid; gap:12px; grid-template-columns:repeat(auto-fill, minmax(min(100%, 240px), 1fr)); }
   .fish { border:1px solid var(--line); border-radius:6px; overflow:hidden; display:flex; flex-direction:column; min-width:0; }
-  .fish a.pic { display:block; position:relative; background:#f4f1e8; aspect-ratio:16/9; }
+  .fish .pic { display:block; position:relative; width:100%; padding:0; border:0; margin:0; background:#f4f1e8; aspect-ratio:16/9; cursor:pointer; font:inherit; }
+  .fish .pic:focus-visible { outline:2px solid var(--accent); outline-offset:-2px; }
+  .pic-tag { position:absolute; right:6px; bottom:6px; font:600 11px var(--body); color:#fff; background:rgba(10,20,30,.72); padding:3px 7px; border-radius:5px; }
+  .rig { font-size:13.5px; border-top:1px solid var(--line); padding-top:6px; }
+  .rig summary { cursor:pointer; font-weight:600; color:var(--accent); }
+  .rig dl { display:grid; grid-template-columns:auto 1fr; gap:4px 10px; margin:8px 0 0; }
+  .rig dt { font-weight:600; color:var(--muted); }
+  .rig dd { margin:0; }
+  .rig-note { margin:6px 0 0; font-size:12.5px; color:var(--muted); }
   .fish img { width:100%; height:100%; object-fit:contain; display:block; }
   .fish .body { padding:10px 12px 12px; display:flex; flex-direction:column; gap:6px; flex:1; }
   .fish .name { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
@@ -518,8 +526,8 @@ window.addEventListener("error", function (e) {
   @supports not (aspect-ratio:1) {
     .radar { height:0; padding-top:100%; }
     .cam { height:0; padding-top:56.25%; }
-    .fish a.pic { height:0; padding-top:56.25%; }
-    .fish a.pic img { position:absolute; top:0; left:0; }
+    .fish .pic { height:0; padding-top:56.25%; }
+    .fish .pic img { position:absolute; top:0; left:0; }
   }
   @supports not (inset:0) {
     /* no flex "gap" before Safari 14.1: space items with margins instead */
@@ -623,7 +631,7 @@ window.addEventListener("error", function (e) {
       <div class="months" id="months" role="tablist" aria-label="Month"></div>
     </div>
     <div class="fish-grid" id="fish-grid"></div>
-    <p class="note">Typical seasons, not a live catch report. Check <a href="https://mrc.virginia.gov/" target="_blank" rel="noopener">VMRC limits</a> before keeping striped bass, flounder, tautog or sea bass. Illustrations: U.S. Fish Commission, NOAA, USFWS (public domain).</p>
+    <p class="note">Typical seasons, not a live catch report. Check <a href="https://mrc.virginia.gov/" target="_blank" rel="noopener">VMRC limits</a> before keeping striped bass, flounder, tautog or sea bass. Tap a fish for bait and tackle; these are general starting points, so ask a local tackle shop what's working this week. Illustrations: U.S. Fish Commission, NOAA, USFWS (public domain), via Wikimedia Commons.</p>
   </section>
 
   </div>
@@ -2276,49 +2284,90 @@ async function loadAll() {
 
 // ---- What's biting in Rudee Inlet (typical seasons; months 1–12) ----
 const WM = "https://thumb.wikimedia.org/wikipedia/commons/thumb/";
-const CM = "https://commons.wikimedia.org/wiki/File:";
 const FISH = [
   {name:"Speckled trout", aka:"Spotted seatrout", season:[1,2,3,4,5,9,10,11,12], peak:[10,11,12],
    tip:"Lake Rudee and Lake Wesley. Soft plastics or suspending lures worked slowly along grass edges and docks.",
+   bait:"Live shrimp or mud minnows under a popping cork; 3–4\" soft-plastic paddle tails; suspending twitchbaits.",
+   tackle:"7' medium-light spinning rod, 10–15 lb braid, 2–3 ft of 15–20 lb fluorocarbon leader.",
+   rig:"1/8–1/4 oz jig head, or a cork with the bait 2–3 ft under it. Retrieve slowly with pauses.",
    img:"6/6c/Spotted_seatrout_fish_cynoscion_nebulosus.jpg", file:"Spotted_seatrout_fish_cynoscion_nebulosus.jpg"},
   {name:"Puppy drum", aka:"Red drum (slot size)", season:[4,5,6,7,8,9,10,11,12], peak:[9,10,11],
    tip:"Inlet channel, jetty rocks and the back lakes. Cut mullet, shrimp or paddle-tail jigs near structure.",
+   bait:"Cut mullet or menhaden, fresh shrimp, peeler crab; scented soft-plastic shrimp or paddle tails.",
+   tackle:"7' medium spinning rod, 15–20 lb braid, 20–30 lb fluorocarbon leader.",
+   rig:"Carolina rig: 1–2 oz egg sinker, bead, swivel, 18\" leader, 3/0–5/0 circle hook. Or a 1/4–1/2 oz jig worked near structure.", note:"Slot limit applies; let the circle hook set itself.",
    img:"a/a5/Red_drum_sciaenops_ocellata.jpg", file:"Red_drum_sciaenops_ocellata.jpg"},
   {name:"Striped bass", aka:"Rockfish", season:[11,12,1,2], peak:[12,1],
    tip:"Jetties and the oceanfront at night or on falling tides. Bucktails and swimming plugs; check season dates.",
+   bait:"Bucktails with a soft trailer, swimming plugs and swimbaits; live eels or cut menhaden at night.",
+   tackle:"7–8' medium-heavy spinning or conventional rod, 20–30 lb braid, 30–40 lb leader.",
+   rig:"1/2–1 oz bucktail cast up-current along the rocks; or a fishfinder rig with an inline circle hook for bait.", note:"Inline circle hooks are required when fishing bait for stripers.",
    img:"e/ef/Striped_bass_morone_saxatilis_fish_%28white_background%29.jpg", file:"Striped_bass_morone_saxatilis_fish_(white_background).jpg"},
   {name:"Tautog", aka:"Togs", season:[3,4,10,11,12], peak:[11],
    tip:"Tight to the jetty rocks. Fiddler or green crabs on a short leader, straight down.",
+   bait:"Green crabs or fiddler crabs (cut green crabs in half); clams as a backup.",
+   tackle:"Stiff 6½–7' medium-heavy rod, 40–50 lb braid, 50 lb leader. Expect to lose rigs in the rocks.",
+   rig:"Single-hook tog rig: 2/0–4/0 short-shank hook on a 4–6\" leader with 2–4 oz sinker, or a 1/2–1 oz tog jig, fished straight down.", note:"Lift hard right away to pull them out of the rocks.",
    img:"f/f9/FMIB_39191_Tautog_%28Tautoga_onitis%29.jpeg", file:"FMIB_39191_Tautog_(Tautoga_onitis).jpeg"},
   {name:"Gray trout", aka:"Weakfish", season:[9,10,11], peak:[10],
    tip:"Deeper water in the inlet and just off the mouth. Small jigs and shrimp at dawn and dusk.",
+   bait:"Small bucktails or metal jigs, soft plastics, squid strips, shrimp.",
+   tackle:"7' medium-light spinning rod, 10–15 lb line with a 20 lb leader.",
+   rig:"1/4–1 oz jig bounced near bottom on moving tide; or a high-low rig with squid.", note:"Soft mouths: use a light drag. Strict 1-fish limit.",
    img:"8/82/FMIB_51476_Squeteague-_Weakfish_%28Cynoscion_regalis%29.jpeg", file:"FMIB_51476_Squeteague-_Weakfish_(Cynoscion_regalis).jpeg"},
   {name:"Sea mullet", aka:"Northern kingfish", season:[4,5,6,9,10,11], peak:[5,10],
    tip:"Sandy bottom off the inlet and the surf nearby. Bloodworm or Fishbites on a two-hook bottom rig.",
+   bait:"Bloodworms or Fishbites (bloodworm flavor); small pieces of shrimp.",
+   tackle:"Light surf rod (8–10') or medium spinning rod, 12–17 lb line.",
+   rig:"Two-hook high-low bottom rig with #4–#6 hooks and a 2–4 oz pyramid sinker.",
    img:"f/ff/FMIB_33654_Menticirrhus_Saxatilis_%28Bloch%3B_Schneider%29.jpeg", file:"FMIB_33654_Menticirrhus_Saxatilis_(Bloch;_Schneider).jpeg"},
   {name:"Bluefish", aka:"Blues, snappers", season:[4,5,6,7,8,9,10,11], peak:[5,10],
    tip:"Mouth of the inlet on moving tide. Metal spoons, Got-Cha plugs or cut bait; use a short wire leader.",
+   bait:"Metal spoons, Got-Cha plugs, poppers; cut mullet or menhaden.",
+   tackle:"7' medium spinning rod, 15–20 lb line.",
+   rig:"Short wire leader or 40–50 lb bite leader; 1/2–2 oz lures retrieved fast. Fishfinder rig for cut bait.", note:"Sharp teeth: use pliers to unhook.",
    img:"c/c5/Bluefish_free_image.jpg", file:"Bluefish_free_image.jpg"},
   {name:"Flounder", aka:"Summer flounder", season:[4,5,6,7,8,9,10,11], peak:[6,7,8,9],
    tip:"Drift the inlet channel and back lakes. Minnows or Gulp on a jig bounced along the bottom.",
+   bait:"Live mud minnows or finger mullet; Gulp swimming mullet; squid strip paired with a minnow.",
+   tackle:"7' medium-light spinning rod, 10–15 lb braid, 20 lb fluorocarbon leader.",
+   rig:"1/4–1/2 oz jig bounced along bottom, or a drift rig: 1–2 oz bank sinker, 2–3 ft leader, 2/0 wide-gap hook with a spinner or bead.", note:"Give it a few seconds to eat before setting the hook.",
    img:"1/17/FMIB_51521_Summer_Flounder%3B_Plaice_Paralichthys_dentatus.jpeg", file:"FMIB_51521_Summer_Flounder;_Plaice_Paralichthys_dentatus.jpeg"},
   {name:"Spot", aka:"", season:[8,9,10], peak:[9],
    tip:"Fall run along the inlet and piers. Bloodworms or shrimp on small hooks.",
+   bait:"Bloodworms or Fishbites; small pieces of shrimp.",
+   tackle:"Light spinning rod, 8–12 lb line.",
+   rig:"Two-hook bottom rig with small #6–#8 hooks and a 1–2 oz sinker.", note:"Small spot also make great live bait for drum and stripers.",
    img:"7/79/Leiostomus_xanthurus.jpg", file:"Leiostomus_xanthurus.jpg"},
   {name:"Croaker", aka:"Hardheads", season:[5,6,7,8,9], peak:[7,8],
    tip:"Bottom fishing in the channel, best in the evening. Squid or shrimp.",
+   bait:"Squid, shrimp, bloodworms or Fishbites.",
+   tackle:"Light to medium spinning rod, 12–15 lb line.",
+   rig:"Two-hook bottom rig with #2–#4 hooks and a 1–3 oz sinker.",
    img:"8/89/Micropogonias_undulatus.jpg", file:"Micropogonias_undulatus.jpg"},
   {name:"Spanish mackerel", aka:"", season:[6,7,8,9], peak:[7,8],
    tip:"Just off the inlet mouth in clean, warm water. Troll or cast small shiny spoons fast.",
+   bait:"Small shiny lures: Clark spoons, Got-Cha plugs, small metal jigs.",
+   tackle:"7' medium-light spinning rod, 15 lb line; trolling gear for boats.",
+   rig:"Light wire or 30 lb fluorocarbon leader. Cast and reel fast, or troll spoons behind a planer or trolling sinker at 6–7 knots.",
    img:"0/0e/Fish3123.jpg", file:"Fish3123.jpg"},
   {name:"Sheepshead", aka:"Convict fish", season:[5,6,7,8,9], peak:[6,7],
    tip:"Barnacle-covered jetty rocks and pilings. Fiddler crabs or clams; set the hook fast.",
+   bait:"Fiddler crabs, sand fleas, barnacles or clams.",
+   tackle:"Medium-heavy rod, 30 lb braid, 30 lb leader.",
+   rig:"Short 12\" leader with a strong 1/0–2/0 hook and 1–2 oz sinker, or a 1/4 oz jig with a fiddler, dropped straight down by the pilings.", note:"Very light bites: set the hook at the first tap.",
    img:"e/e9/Archosargus_probatocephalus.jpg", file:"Archosargus_probatocephalus.jpg"},
   {name:"Black drum", aka:"", season:[4,5,6], peak:[5],
    tip:"Smaller black drum in the inlet and lakes in spring. Clams or crab on the bottom.",
+   bait:"Blue crab pieces, clams, shrimp.",
+   tackle:"Medium-heavy rod, 20–30 lb line.",
+   rig:"Fishfinder or high-low rig with 3/0–6/0 circle hooks and 2–4 oz of weight.",
    img:"a/ac/FMIB_33657_Pogonias_Cromis_Linnaeus.jpeg", file:"FMIB_33657_Pogonias_Cromis_Linnaeus.jpeg"},
   {name:"Black sea bass", aka:"", season:[5,6,7,8,9,10], peak:[],
    tip:"Mostly small fish on the jetty rocks; keepers are on offshore wrecks. Squid strips on the bottom.",
+   bait:"Squid strips, cut fish, clams; small bucktails.",
+   tackle:"Medium spinning or conventional rod, 20–30 lb line.",
+   rig:"High-low bottom rig with 1/0 hooks and 2–6 oz sinker.", note:"Size and season limits apply.",
    img:"c/c7/FMIB_51459_Sea_Bass%3B_Black-Fish_Centropristes_striatus.jpeg", file:"FMIB_51459_Sea_Bass;_Black-Fish_Centropristes_striatus.jpeg"},
 ];
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -2341,17 +2390,27 @@ function renderFish(m) {
       return `<span class="${cls}" title="${MONTH_NAMES[i]}">${n[0]}</span>`;
     }).join("");
     return `<article class="fish">
-      <a class="pic" href="${CM}${encodeURI(f.file)}" target="_blank" rel="noopener" title="Illustration source">
-        <img src="${thumb(f.img)}" alt="${esc(f.name)} illustration" loading="lazy"></a>
+      <button type="button" class="pic" aria-label="Show bait and tackle for ${esc(f.name)}" title="Bait &amp; tackle">
+        <img src="${thumb(f.img)}" alt="${esc(f.name)} illustration" loading="lazy"><span class="pic-tag">Bait &amp; tackle</span></button>
       <div class="body">
         <div class="name"><b>${esc(f.name)}</b><span class="pill ${peak ? "p-peak" : "p-good2"}">${peak ? "Peak" : "In season"}</span></div>
         ${f.aka ? `<span class="aka">${esc(f.aka)}</span>` : ""}
         <p class="tip">${esc(f.tip)}</p>
+        ${f.bait ? `<details class="rig"><summary>Bait &amp; tackle</summary>
+          <dl><dt>Bait</dt><dd>${esc(f.bait)}</dd><dt>Tackle</dt><dd>${esc(f.tackle)}</dd><dt>Rig</dt><dd>${esc(f.rig)}</dd></dl>
+          ${f.note ? `<p class="rig-note">${esc(f.note)}</p>` : ""}</details>` : ""}
         <div class="cal" aria-label="Season by month">${cal}</div>
       </div>
     </article>`;
   }).join("") : `<p class="fish-empty">No species listed for this month.</p>`;
 }
+// Tapping a fish picture opens (or closes) its bait & tackle notes.
+$("fish-grid").addEventListener("click", e => {
+  const b = e.target.closest("button.pic");
+  if (!b) return;
+  const d = b.closest(".fish").querySelector("details.rig");
+  if (d) { d.open = !d.open; if (d.open) d.scrollIntoView({block: "nearest", behavior: "smooth"}); }
+});
 $("months").addEventListener("click", e => {
   const b = e.target.closest("button[data-m]");
   if (b) renderFish(+b.dataset.m);
