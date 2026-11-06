@@ -6,7 +6,10 @@ const FRAMES = +(process.env.FRAMES || 15), EVERY = +(process.env.EVERY || 10); 
 (async () => {
   fs.mkdirSync("cam-frames", {recursive: true});
   const status = {time: new Date().toISOString(), online: false, frames: [], note: ""};
-  const b = await chromium.launch({args: ["--autoplay-policy=no-user-gesture-required"]});
+  // Use real Google Chrome (preinstalled on GitHub runners): Playwright's own Chromium can't play the cam's H.264 video,
+  // and the player then shows "temporarily offline". Fall back to Chromium if Chrome isn't there.
+  const opts = {args: ["--autoplay-policy=no-user-gesture-required"]};
+  const b = await chromium.launch({...opts, channel: "chrome"}).catch(() => chromium.launch(opts));
   try {
     const p = await b.newPage({viewport: {width: 1600, height: 1000}});
     await p.goto("https://surfchex.com/cams/virginia-beach-web-cam/", {waitUntil: "domcontentloaded", timeout: 60000});
