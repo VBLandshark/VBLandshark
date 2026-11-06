@@ -1321,12 +1321,17 @@ function showSurfReport() {
   const t = r && r.time ? new Date(r.time) : null;
   const age = t ? (Date.now() - t) / 36e5 : Infinity;
   if (!r || !r.looks || !(age < 72)) { el.innerHTML = ""; return; }
-  const when = age < 20 && t.toDateString() === new Date().toDateString() ? fmtTime(t) : `${t.toLocaleDateString([], {weekday:"short"})} ${fmtTime(t)}`;
-  const line = age < 3
-    ? `Right now the surf between the pier and the jetty looks ${esc(r.looks)}`
-    : `At ${when} the surf between the pier and the jetty looked ${esc(r.looks)}`;
-  el.innerHTML = `<p><b>Surf report:</b> ${line}</p>
-    <p class="note">From the Surfchex pier cam, which sweeps from the pier to the 1st Street jetty · checked ${when}</p>`;
+  // Header always says when: "Today, Fri Nov 6 · 4:32 PM" (or just the date if it wasn't today).
+  const today = t.toDateString() === new Date().toDateString();
+  const day = t.toLocaleDateString([], {weekday:"short", month:"short", day:"numeric"});
+  const when = `${today ? "Today, " : ""}${day} · ${fmtTime(t)}`;
+  // The evening check (taken near sunset) is marked lastLight and reads as the end-of-day report.
+  const line = r.lastLight ? `At last light the surf between the pier and the jetty was ${esc(r.looks)}`
+    : age < 3 ? `Right now the surf between the pier and the jetty looks ${esc(r.looks)}`
+    : `The surf between the pier and the jetty looked ${esc(r.looks)}`;
+  el.innerHTML = `<p><b>Surf report · ${when}</b></p>
+    <p style="margin-top:3px">${line}</p>
+    <p class="note">From the Surfchex pier cam, which sweeps from the pier to the 1st Street jetty</p>`;
 }
 
 // ---- Waves: animated wave train (time view) + 3-day height/period chart ----
