@@ -59,6 +59,14 @@ add("Live site page", async () => {
   must(title.includes("VBLandshark"), `title is "${title}"`);
   return title;
 });
+// Netlify should be serving the same index.html as main; a mismatch means a deploy is stuck or failed.
+add("Live site matches main", async () => {
+  const live = (await text(SITE + "?v=" + Date.now())).replace(/\r/g, "").trim();
+  const repo = html.replace(/\r/g, "").trim();
+  if (live === repo) return "up to date";
+  let i = 0; while (i < live.length && live[i] === repo[i]) i++;
+  throw new Error(`live page differs from main at char ${i} (live ${live.length} chars, main ${repo.length}): "${repo.slice(i, i + 60)}"`);
+});
 for (const f of ["vblandshark-boat.jpg", "icon-180.png", "manifest.webmanifest"]) {
   add(`Live site ${f}`, async () => {
     const r = await req(SITE + f);
