@@ -59,13 +59,15 @@ add("Live site page", async () => {
   must(title.includes("VBLandshark"), `title is "${title}"`);
   return title;
 });
-// Netlify should be serving the same index.html as main; a mismatch means a deploy is stuck or failed.
+// Netlify should be serving the same page script as main; a mismatch means a deploy is stuck or failed.
+// (Compares the main inline script only, since Netlify may inject snippets into the HTML head.)
+const mainScript = t => (t.replace(/\r/g, "").match(/<script(?:\s[^>]*)?>[\s\S]*?<\/script>/gi) || []).sort((a, b) => b.length - a.length)[0] || "";
 add("Live site matches main", async () => {
-  const live = (await text(SITE + "?v=" + Date.now())).replace(/\r/g, "").trim();
-  const repo = html.replace(/\r/g, "").trim();
-  if (live === repo) return "up to date";
+  const live = mainScript(await text(SITE + "?v=" + Date.now())), repo = mainScript(html);
+  must(repo.length > 1000, "couldn't find the page script in main");
+  if (live === repo) return "page script up to date";
   let i = 0; while (i < live.length && live[i] === repo[i]) i++;
-  throw new Error(`live page differs from main at char ${i} (live ${live.length} chars, main ${repo.length}): "${repo.slice(i, i + 60)}"`);
+  throw new Error(`live page script differs from main at char ${i} (live ${live.length}, main ${repo.length}): "${repo.slice(i, i + 60)}"`);
 });
 for (const f of ["vblandshark-boat.jpg", "icon-180.png", "manifest.webmanifest"]) {
   add(`Live site ${f}`, async () => {
