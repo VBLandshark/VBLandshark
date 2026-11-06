@@ -29,6 +29,7 @@ const WX_URL = tmpl(/const u = (`https:\/\/api\.open-meteo[\s\S]*?);\n/, "Open-M
 const radarLines = grab(/^(const R_CLAT[\s\S]*?^const R_BBOX = .*)$/m, "radar box");
 const R_BBOX = new Function(`${radarLines}\nreturn R_BBOX;`)();
 const RADAR_URL = tmpl(/(`https:\/\/opengeo\.ncep\.noaa\.gov[^`]*`)/, "radar URL", {R_BBOX});
+const SAT_URL = tmpl(/(`https:\/\/nowcoast\.noaa\.gov\/geoserver\/satellite[^`]*`)/, "satellite cloud URL", {R_BBOX});
 const TOPO_URL = tmpl(/(`https:\/\/basemap\.nationalmap\.gov[^`]*`)/, "USGS topo URL", {R_BBOX});
 const TIDE_BASE = grab(/const base = "(https:\/\/api\.tidesandcurrents[^"]*product=predictions[^"]*)"/, "tide URL") + P.TIDE_STATION;
 const WTEMP_BASE = grab(/const base = "(https:\/\/api\.tidesandcurrents[^"]*water_temperature[^"]*)"/, "water temp URL");
@@ -203,6 +204,14 @@ add("NOAA radar map (conus_bref_qcd)", async () => {
   const pct = o => o ? (100 * o.n / o.total).toFixed(1) + "%" : "unreadable";
   must(!us || us.n > 0, "radar shows no rain anywhere in the lower 48 (layer may be stale)");
   return `map OK · rain on ${pct(local)} of the local map, ${pct(us)} of the US map`;
+});
+add("GOES satellite clouds (nowCOAST goes_longwave_imagery)", async () => {
+  const r = await req(SAT_URL);
+  must((r.headers.get("content-type") || "").startsWith("image/"), `map returned ${r.headers.get("content-type")}`);
+  must(r.headers.get("access-control-allow-origin") === "*", "no CORS header, so the page can't turn it into a cloud layer");
+  const n = (await r.arrayBuffer()).byteLength;
+  must(n > 5000, `image only ${n} bytes (blank?)`);
+  return `map OK, ${n} bytes`;
 });
 add("USGS topo map", async () => {
   const r = await req(TOPO_URL);
