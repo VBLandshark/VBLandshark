@@ -48,22 +48,22 @@ window.addEventListener("error", function (e) {
   button { font:600 13px var(--body); color:var(--accent); background:transparent; border:1px solid var(--accent);
            border-radius:4px; padding:4px 10px; cursor:pointer; }
   button:focus-visible, a:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
-  #alerts { display:grid; gap:6px; margin-bottom:12px; }
-  /* Weather alerts: one compact line each; tap to open the full NWS text */
-  .alert { --sev:var(--fair); background:var(--panel); border:1px solid var(--line); border-left:4px solid var(--sev); border-radius:6px; font-size:14px; }
+  #alerts { display:grid; gap:4px; margin-bottom:10px; }
+  /* Weather alerts: one short line each; tap to open the headline and full NWS text */
+  .alert { --sev:var(--fair); background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--sev); border-radius:6px; font-size:13px; }
   .alert.sev-high { --sev:var(--poor); }
   .alert.sev-low { --sev:var(--accent); }
-  .alert summary { list-style:none; cursor:pointer; padding:7px 12px; display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 8px; }
+  .alert summary { list-style:none; cursor:pointer; padding:3px 10px; display:flex; align-items:baseline; gap:8px; white-space:nowrap; overflow:hidden; }
   .alert summary::-webkit-details-marker { display:none; }
   .alert summary:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
   .al-ev { font-weight:700; color:var(--sev); }
-  .al-what { font-weight:600; }
-  .al-until { color:var(--muted); font-size:13px; }
-  .al-more { margin-left:auto; color:var(--accent); font-size:13px; font-weight:600; white-space:nowrap; }
+  .al-what { font-weight:600; white-space:normal; }
+  .al-until { color:var(--muted); font-size:12px; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+  .al-more { margin-left:auto; color:var(--accent); font-size:12px; font-weight:600; white-space:nowrap; }
   .al-more::after { content:" ▾"; }
   .alert[open] .al-more::after { content:" ▴"; }
   .alert[open] .al-more span { display:none; }
-  .al-body { padding:0 12px 10px; font-size:14px; line-height:1.5; }
+  .al-body { padding:2px 10px 8px; font-size:13.5px; line-height:1.5; }
   .al-body p { margin:0 0 8px; white-space:pre-line; }
   .al-meta { color:var(--muted); font-size:12.5px; }
   /* Weather icons and hourly strip */
@@ -2236,7 +2236,7 @@ async function loadAlerts() {
   $("alerts").innerHTML = feats.map(alertHTML).join("");
 }
 
-// One alert as a compact, tappable line: type · what it's about · until when. Tap for the full NWS text.
+// One alert as a compact, tappable line: type · until when. Tap for the headline and full NWS text.
 function alertHTML(f) {
   const p = f.properties;
   const sev = /extreme|severe/i.test(p.severity) ? "sev-high" : /minor|unknown/i.test(p.severity) ? "sev-low" : "";
@@ -2259,8 +2259,8 @@ function alertHTML(f) {
   const sent = p.sent ? new Date(p.sent) : null;
   const issued = sent ? `Issued ${sent.toLocaleDateString([], {weekday:"short"})} ${fmtTime(sent)}` : "";
   return `<details class="alert ${sev}">
-    <summary><span class="al-ev">${esc(p.event)}</span><span class="al-what">${esc(what)}</span>${until ? `<span class="al-until">${until}</span>` : ""}<span class="al-more"><span>Details</span></span></summary>
-    <div class="al-body">${paras || "<p>No details given.</p>"}${instr}
+    <summary><span class="al-ev">${esc(p.event)}</span>${until ? `<span class="al-until">${until}</span>` : ""}<span class="al-more"><span>Details</span></span></summary>
+    <div class="al-body">${what ? `<p class="al-what">${esc(what)}</p>` : ""}${paras || "<p>No details given.</p>"}${instr}
       <p class="al-meta">${esc([issued, p.senderName].filter(Boolean).join(" by "))} · <a href="https://forecast.weather.gov/MapClick.php?lat=${LAT}&lon=${LON}" target="_blank" rel="noopener">Open on weather.gov</a></p></div>
   </details>`;
 }
