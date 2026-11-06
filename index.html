@@ -1006,11 +1006,14 @@ function renderClouds() {
   if (!el || (!store.obs && !store.wx)) return;
   const o = store.obs?.o, c = store.wx?.current || {};
   const raw = o?.rawMessage || "";
-  const layers = (o?.cloudLayers || []).filter(l => CL_AMT[l.amount] && l.base?.value != null).map(l => {
+  let layers = (o?.cloudLayers || []).filter(l => CL_AMT[l.amount] && l.base?.value != null).map(l => {
     const ft = Math.round(l.base.value * 3.28084 / 100) * 100;
     const m = raw.match(new RegExp(`${l.amount}${String(Math.round(ft / 100)).padStart(3, "0")}(CB|TCU)`));
     return {amt: l.amount, ft, flag: m ? m[1] : ""};
   });
+  // If the parsed layers are missing, read them straight from the raw report (e.g. "BKN035 OVC250CB").
+  if (!layers.length) layers = [...raw.matchAll(/\b(FEW|SCT|BKN|OVC|VV)(\d{3})(CB|TCU)?\b/g)].map(m => ({amt: m[1], ft: +m[2] * 100, flag: m[3] || ""}));
+  const clear = !layers.length && (/\b(CLR|SKC|NCD|NSC)\b/.test(raw) || (o?.cloudLayers || []).some(l => /CLR|SKC/.test(l.amount)));
   const hr = new Date().getHours(), day = c.is_day != null ? !!c.is_day : hr >= 6 && hr < 18;
   // Sky picture: altitude on a square-root scale so low clouds get room. 0 ft at the ground, 40,000 ft at the top.
   const W = 360, G = 196, TOP = 18, X0 = 46, X1 = 300;
@@ -1068,7 +1071,8 @@ function renderClouds() {
   </svg>`;
   const list = layers.length
     ? layers.map(L => `<div class="cl-lyr"><b>${CL_AMT[L.amt][0]}</b><div>${L.ft.toLocaleString()} ft<br><span>${cloudType(L.ft, L.amt, L.flag)}</span></div></div>`).join("")
-    : o ? `<div class="cl-lyr"><b>Clear</b><div>no clouds below about 12,000 ft</div></div>` : "";
+    : clear ? `<div class="cl-lyr"><b>Clear</b><div>no clouds below about 12,000 ft</div></div>`
+    : `<div class="cl-lyr"><b>No report</b><div>the airport isn't reporting cloud layers right now</div></div>`;
   const model = c.cloud_cover != null ? `<div class="cl-model">
       <div class="kv"><span>Total</span><span>${r0(c.cloud_cover)}%</span></div>
       <div class="kv"><span>High</span><span>${r0(c.cloud_cover_high)}%</span></div>
