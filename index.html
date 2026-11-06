@@ -210,6 +210,25 @@ window.addEventListener("error", function (e) {
   .radar img, .radar svg, .radar canvas { position:absolute; top:0; right:0; bottom:0; left:0; width:100%; height:100%; display:block; }
   .r-base { opacity:.92; }
   .r-wx { opacity:.85; }
+  .radar { cursor:zoom-in; }
+  .radar:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  .radar.big { position:fixed; z-index:1001; top:50%; left:50%; transform:translate(-50%, -50%); margin:0; cursor:zoom-out;
+    width:min(96vw, calc(96vh - 40px), 1000px); height:min(96vw, calc(96vh - 40px), 1000px); padding-top:0; aspect-ratio:auto;
+    box-shadow:0 10px 50px rgba(0,0,0,.6); border-radius:10px; }
+  .r-backdrop { position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,.72); }
+  .r-backdrop[hidden] { display:none; }
+  body.r-open { overflow:hidden; }
+  .r-time { position:absolute; top:6px; left:6px; z-index:2; font:600 11px var(--body); color:#fff; background:rgba(10,20,30,.72); padding:3px 7px; border-radius:5px; pointer-events:none; }
+  .r-btn { position:absolute; bottom:6px; right:6px; z-index:2; width:30px; height:30px; border:0; border-radius:50%; background:rgba(10,20,30,.75); color:#fff; font-size:13px; cursor:pointer; }
+  .r-close { position:absolute; top:6px; right:6px; z-index:2; display:none; width:32px; height:32px; border:0; border-radius:50%; background:rgba(10,20,30,.75); color:#fff; font-size:16px; cursor:pointer; }
+  .radar.big .r-close { display:block; }
+  .radar.big .r-time { font-size:14px; }
+  .r-bar { position:absolute; left:6px; right:44px; bottom:12px; z-index:2; height:5px; border-radius:3px; background:rgba(10,20,30,.55); pointer-events:none; }
+  .r-bar i { display:block; height:100%; border-radius:3px; background:rgba(255,255,255,.85); width:0; }
+  .r-mv { fill:none; stroke:#fff; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
+  .r-mv-o { fill:none; stroke:rgba(10,20,30,.7); stroke-width:4.4; stroke-linecap:round; stroke-linejoin:round; }
+  .r-mv-l { fill:#fff; font:700 5.5px var(--body); paint-order:stroke; stroke:rgba(10,20,30,.8); stroke-width:2px; }
+  .r-motion { font-size:13px; margin-top:6px; }
   .r-key { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--muted); margin-top:4px; }
   .r-key i { width:22px; height:8px; border-radius:3px; background:rgba(88,102,116,.7); flex:none; }
   .r-ring { fill:none; stroke:#1d3a46; stroke-width:.6; stroke-dasharray:2 2; opacity:.55; }
@@ -546,15 +565,21 @@ window.addEventListener("error", function (e) {
         <a class="cam-btn alt" href="https://surfchex.com/cams/virginia-beach-web-cam/" target="_blank" rel="noopener"><span class="cam-dot"></span>Watch live · Fishing pier cam</a>
       </div>
       <p class="note" style="margin-top:6px">These cams only play on their owners' sites, so they open in a new tab.</p>
-      <div class="radar" id="radar">
+      <div class="radar" id="radar" role="button" tabindex="0" aria-label="Weather radar and clouds within 100 miles of Rudee Inlet, last 2 hours. Tap to enlarge.">
         <img class="r-base" id="radar-base" alt="">
         <canvas class="r-sat" id="radar-sat" width="600" height="600" aria-hidden="true"></canvas>
-        <img class="r-wx" id="radar-wx" alt="Weather radar within 100 miles of Rudee Inlet">
+        <canvas class="r-wx" id="radar-wx" width="600" height="600" aria-hidden="true"></canvas>
         <svg class="r-over" id="radar-over" viewBox="0 0 200 200" aria-hidden="true"></svg>
+        <span class="r-time" id="radar-time">Loading…</span>
+        <div class="r-bar"><i id="radar-bar"></i></div>
+        <button type="button" class="r-btn" id="radar-play" aria-label="Pause animation">❚❚</button>
+        <button type="button" class="r-close" id="radar-close" aria-label="Close enlarged map">✕</button>
       </div>
+      <div class="r-backdrop" id="radar-backdrop" hidden></div>
+      <p class="r-motion" id="radar-motion"></p>
       <div class="r-legend" aria-label="Radar intensity"><span>Light</span><i></i><span>Heavy</span></div>
       <div class="r-key"><i></i><span>Gray haze = cloud cover (GOES satellite, infrared; darker = thicker, higher clouds)</span></div>
-      <p class="note" id="radar-note" style="margin-top:4px">NOAA radar · 200 mi across, Rudee Inlet at center</p>
+      <p class="note" id="radar-note" style="margin-top:4px">NOAA radar and satellite clouds · last 2 hours, looping · 200 mi across, Rudee Inlet at center · tap the map to enlarge</p>
     </section>
     <section class="panel wide" id="clouds"><h2>Clouds overhead</h2><p class="loading">Loading…</p></section>
     <section class="panel wide" id="hourly"><h2>Hour by hour · daylight</h2><p class="loading">Loading…</p></section>
@@ -2335,19 +2360,89 @@ renderFish(new Date().getMonth() + 1);
 
 // Reload the beach cam every hour so it never sits on a stale or stalled stream.
 
-// ---- Radar: NOAA composite reflectivity over a USGS base map, 100 miles each way from the inlet mouth ----
+// ---- Radar: NOAA composite reflectivity and GOES infrared clouds over a USGS base map, 100 miles each way from the inlet mouth ----
+// The map loops through the last 2 hours (NOAA keeps about 2 hours of radar), and compares the frames to show which way the weather is moving.
 const R_CLAT = 36.8317, R_CLON = -75.9683, R_MI = 100;
 const R_DLAT = R_MI / 69.05, R_DLON = R_MI / (69.17 * Math.cos(R_CLAT * Math.PI / 180));
 const R_BBOX = [R_CLAT - R_DLAT, R_CLON - R_DLON, R_CLAT + R_DLAT, R_CLON + R_DLON].map(v => v.toFixed(4)).join(",");   // lat,lon order (WMS 1.3.0, EPSG:4326)
-function loadRadar() {
-  const base = $("radar-base"), wx = $("radar-wx"), over = $("radar-over");
-  if (!wx) return;
+const R_STEP = 15, R_FRAMES = 8;   // a frame every 15 minutes: 7 past frames plus the latest
+const radarUrl = t => `https://opengeo.ncep.noaa.gov/geoserver/conus/conus_bref_qcd/ows?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=conus_bref_qcd&STYLES=&CRS=EPSG:4326&BBOX=${R_BBOX}&WIDTH=600&HEIGHT=600&FORMAT=image/png&TRANSPARENT=true${t ? "&TIME=" + t : "&_=" + Date.now()}`;
+const satUrl = t => `https://nowcoast.noaa.gov/geoserver/satellite/wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=goes_longwave_imagery&STYLES=&CRS=EPSG:4326&BBOX=${R_BBOX}&WIDTH=600&HEIGHT=600&FORMAT=image/png${t ? "&TIME=" + t : "&_=" + Date.now()}`;
+const RA = {frames: [], i: 0, timer: null, playing: !matchMedia("(prefers-reduced-motion: reduce)").matches, cache: {}};
+
+// Load an image, asking for CORS first (so its pixels can be read) and falling back to a plain load.
+function loadImg(url) {
+  return new Promise(res => {
+    const a = new Image(); a.crossOrigin = "anonymous";
+    a.onload = () => res({img: a, readable: true});
+    a.onerror = () => { const b = new Image(); b.onload = () => res({img: b, readable: false}); b.onerror = () => res(null); b.src = url; };
+    a.src = url;
+  });
+}
+// Cloud cover: cold cloud tops are bright in infrared and the clear ground or sea is dark, so brightness becomes the
+// opacity of a gray veil and clear sky stays see-through.
+function cloudCanvas(img) {
+  const cv = document.createElement("canvas"); cv.width = cv.height = 600;
+  const ctx = cv.getContext("2d");
+  ctx.drawImage(img, 0, 0, 600, 600);
+  const d = ctx.getImageData(0, 0, 600, 600), px = d.data;
+  for (let i = 0; i < px.length; i += 4) {
+    const t = Math.max(0, Math.min(1, (px[i] - 86) / 64));    // 86 or darker = clear (warm sea or land); 150+ = thick, high cloud
+    px[i] = 88; px[i + 1] = 102; px[i + 2] = 116; px[i + 3] = Math.round(Math.pow(t, 0.75) * 190);
+  }
+  ctx.putImageData(d, 0, 0);
+  return cv;
+}
+// A coarse 60×60 grid of how much rain (or cloud) each cell has, from an image's alpha channel.
+const R_GRID = 60;
+function gridOf(src) {
+  try {
+    const cv = document.createElement("canvas"); cv.width = cv.height = R_GRID;
+    const ctx = cv.getContext("2d"); ctx.drawImage(src, 0, 0, R_GRID, R_GRID);
+    const px = ctx.getImageData(0, 0, R_GRID, R_GRID).data, g = new Float32Array(R_GRID * R_GRID);
+    for (let i = 0; i < g.length; i++) g[i] = px[i * 4 + 3] / 255;
+    return g;
+  } catch (e) { return null; }
+}
+// Best shift (in grid cells) that lines frame A up with later frame B, by mean-removed correlation over shifts of ±10 cells.
+function bestShift(A, B) {
+  const N = R_GRID, M = 10;
+  const mean = g => g.reduce((s, v) => s + v, 0) / g.length;
+  const ma = mean(A), mb = mean(B);
+  if (ma < 0.004 || mb < 0.004) return null;               // almost nothing to track
+  let best = null;
+  for (let dy = -M; dy <= M; dy++) for (let dx = -M; dx <= M; dx++) {
+    let s = 0, n = 0;
+    for (let y = Math.max(0, -dy); y < Math.min(N, N - dy); y++) for (let x = Math.max(0, -dx); x < Math.min(N, N - dx); x++) {
+      s += (A[y * N + x] - ma) * (B[(y + dy) * N + x + dx] - mb); n++;
+    }
+    s /= n;
+    if (!best || s > best.s) best = {dx, dy, s};
+  }
+  return best && best.s > 0 ? best : null;
+}
+// Average motion over several frame pairs 30 minutes apart. Returns {deg (toward), mph} or null.
+function motionOf(grids, times) {
+  let sx = 0, sy = 0, sh = 0, n = 0;
+  for (let i = 0; i + 2 < grids.length; i++) {
+    if (!grids[i] || !grids[i + 2] || !times[i] || !times[i + 2]) continue;
+    const b = bestShift(grids[i], grids[i + 2]);
+    if (!b) continue;
+    const hrs = (times[i + 2] - times[i]) / 36e5;
+    sx += b.dx / hrs; sy += b.dy / hrs; sh += 1; n++;
+  }
+  if (n < 2) return null;
+  const cell = 2 * R_MI / R_GRID, vx = sx / sh * cell, vy = sy / sh * cell;   // mph, x east, y south
+  const mph = Math.hypot(vx, vy);
+  if (mph < 4 || mph > 90) return mph < 4 ? {deg: null, mph} : null;
+  return {deg: (Math.atan2(vx, -vy) * 180 / Math.PI + 360) % 360, mph};
+}
+
+async function loadRadar() {
+  const base = $("radar-base"), over = $("radar-over");
+  if (!base) return;
   if (!base.src) base.src = `https://basemap.nationalmap.gov/arcgis/services/USGSTopo/MapServer/WmsServer?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=0&STYLES=&CRS=EPSG:4326&BBOX=${R_BBOX}&WIDTH=600&HEIGHT=600&FORMAT=image/png`;
-  wx.src = `https://opengeo.ncep.noaa.gov/geoserver/conus/conus_bref_qcd/ows?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=conus_bref_qcd&STYLES=&CRS=EPSG:4326&BBOX=${R_BBOX}&WIDTH=600&HEIGHT=600&FORMAT=image/png&TRANSPARENT=true&_=${Date.now()}`;
-  wx.onload = () => { $("radar-note").textContent = `NOAA radar and satellite clouds · updated ${fmtTime(new Date())} · 200 mi across, Rudee Inlet at center`; };
-  loadClouds();
-  wx.onerror = () => { $("radar-note").textContent = "Radar image unavailable right now."; };
-  if (!over.innerHTML) {
+  if (!over.dataset.rings) {
     let g = "";
     [[25, "25 mi"], [50, "50 mi"], [100, "100 mi"]].forEach(([mi, l]) => {
       const r = mi / R_MI * 100;
@@ -2356,33 +2451,110 @@ function loadRadar() {
     });
     g += `<line class="r-ctr" x1="93" y1="100" x2="97" y2="100"/><line class="r-ctr" x1="103" y1="100" x2="107" y2="100"/>
       <line class="r-ctr" x1="100" y1="93" x2="100" y2="97"/><line class="r-ctr" x1="100" y1="103" x2="100" y2="107"/>
-      <circle class="r-dot" cx="100" cy="100" r="2"/>`;
-    over.innerHTML = g;
+      <circle class="r-dot" cx="100" cy="100" r="2"/><g id="r-motion-g"></g>`;
+    over.innerHTML = g; over.dataset.rings = 1;
   }
+  // Frame times: every 15 minutes back from the last quarter hour, then the latest image.
+  const q = R_STEP * 6e4, last = Math.floor(Date.now() / q) * q;
+  const times = [];
+  for (let k = R_FRAMES - 1; k >= 1; k--) times.push(new Date(last - k * q));
+  times.push(null);
+  const iso = t => t ? t.toISOString().replace(".000", "") : "";
+  const frames = await Promise.all(times.map(async t => {
+    const key = iso(t);
+    if (key && RA.cache[key]) return RA.cache[key];
+    const [r, c] = await Promise.all([loadImg(radarUrl(key)), loadImg(satUrl(key))]);
+    let sat = null;
+    if (c && c.readable) { try { sat = cloudCanvas(c.img); } catch (e) {} }
+    const f = {t: t || new Date(), latest: !t, radar: r && r.img, sat,
+      rGrid: r && r.readable ? gridOf(r.img) : null, cGrid: sat ? gridOf(sat) : null};
+    if (key && r && c) RA.cache[key] = f;
+    return f;
+  }));
+  // drop cached frames that have scrolled out of the window
+  const keep = new Set(times.map(iso));
+  Object.keys(RA.cache).forEach(k => { if (!keep.has(k)) delete RA.cache[k]; });
+  RA.frames = frames.filter(f => f.radar || f.sat);
+  if (!RA.frames.length) { $("radar-time").textContent = "Radar unavailable"; $("radar-note").textContent = "Radar image unavailable right now."; return; }
+  RA.i = RA.frames.length - 1;
+  showFrame();
+  if (RA.playing) playRadar(); else setPlayBtn();
+  // Which way is it moving? Rain if there is enough to track, otherwise clouds.
+  const tms = RA.frames.map(f => f.t.getTime());
+  const rain = motionOf(RA.frames.map(f => f.rGrid), tms);
+  const cloud = motionOf(RA.frames.map(f => f.cGrid), tms);
+  drawMotion(rain && rain.deg != null ? rain : null, cloud && cloud.deg != null ? cloud : null, rain, cloud);
+  $("radar-note").textContent = `NOAA radar and satellite clouds · last 2 hours, looping · updated ${fmtTime(new Date())} · 200 mi across, Rudee Inlet at center · tap the map to enlarge`;
 }
-// Cloud cover: GOES infrared satellite (works day and night). Cold cloud tops are bright in infrared and the clear
-// ground or sea is dark, so brightness becomes the opacity of a gray veil and clear sky stays see-through.
-function loadClouds() {
-  const cv = $("radar-sat");
-  if (!cv) return;
-  const img = new Image();
-  img.crossOrigin = "anonymous";
-  img.onload = () => {
-    try {
-      const ctx = cv.getContext("2d");
-      ctx.clearRect(0, 0, cv.width, cv.height);
-      ctx.drawImage(img, 0, 0, cv.width, cv.height);
-      const d = ctx.getImageData(0, 0, cv.width, cv.height), px = d.data;
-      for (let i = 0; i < px.length; i += 4) {
-        const t = Math.max(0, Math.min(1, (px[i] - 86) / 64));    // 86 or darker = clear (warm sea or land); 150+ = thick, high cloud
-        px[i] = 88; px[i + 1] = 102; px[i + 2] = 116; px[i + 3] = Math.round(Math.pow(t, 0.75) * 190);
-      }
-      ctx.putImageData(d, 0, 0);
-    } catch (e) { cv.getContext("2d").clearRect(0, 0, cv.width, cv.height); }
+function showFrame() {
+  const f = RA.frames[RA.i];
+  if (!f) return;
+  const wx = $("radar-wx").getContext("2d"), sat = $("radar-sat").getContext("2d");
+  wx.clearRect(0, 0, 600, 600); sat.clearRect(0, 0, 600, 600);
+  if (f.sat) sat.drawImage(f.sat, 0, 0);
+  if (f.radar) wx.drawImage(f.radar, 0, 0, 600, 600);
+  const ago = Math.round((Date.now() - f.t) / 6e4);
+  $("radar-time").textContent = f.latest ? `Now · ${fmtTime(f.t)}` : `${fmtTime(f.t)} · ${ago >= 60 ? Math.floor(ago / 60) + " h " + (ago % 60 ? ago % 60 + " min" : "") : ago + " min"} ago`;
+  $("radar-bar").style.width = `${(RA.i + 1) / RA.frames.length * 100}%`;
+}
+function playRadar() {
+  clearTimeout(RA.timer);
+  const tick = () => {
+    RA.i = (RA.i + 1) % RA.frames.length;
+    showFrame();
+    RA.timer = setTimeout(tick, RA.i === RA.frames.length - 1 ? 2200 : 650);   // pause on the latest frame
   };
-  img.onerror = () => cv.getContext("2d").clearRect(0, 0, cv.width, cv.height);
-  img.src = `https://nowcoast.noaa.gov/geoserver/satellite/wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=goes_longwave_imagery&STYLES=&CRS=EPSG:4326&BBOX=${R_BBOX}&WIDTH=600&HEIGHT=600&FORMAT=image/png&_=${Date.now()}`;
+  RA.timer = setTimeout(tick, RA.i === RA.frames.length - 1 ? 2200 : 650);
+  setPlayBtn();
 }
+function setPlayBtn() {
+  const b = $("radar-play");
+  b.textContent = RA.playing ? "❚❚" : "▶";
+  b.setAttribute("aria-label", RA.playing ? "Pause animation" : "Play animation");
+}
+// Arrow from the inlet showing where the rain (orange) or clouds (white) are heading, and a sentence under the map.
+function drawMotion(rain, cloud, rainRaw, cloudRaw) {
+  const g = $("r-motion-g"), el = $("radar-motion");
+  if (!g) return;
+  const close = rain && cloud && Math.abs(((rain.deg - cloud.deg + 540) % 360) - 180) < 35;
+  const arrow = (m, cls, label, side) => {
+    const a = m.deg * Math.PI / 180, L = 16 + Math.min(34, m.mph * 0.9);
+    const x2 = 100 + Math.sin(a) * L, y2 = 100 - Math.cos(a) * L;
+    const hx = Math.sin(a), hy = -Math.cos(a), px = -hy, py = hx;
+    const head = `M${(x2 - hx * 7 + px * 5).toFixed(1)} ${(y2 - hy * 7 + py * 5).toFixed(1)} L${x2.toFixed(1)} ${y2.toFixed(1)} L${(x2 - hx * 7 - px * 5).toFixed(1)} ${(y2 - hy * 7 - py * 5).toFixed(1)}`;
+    const line = `M${(100 + hx * 6).toFixed(1)} ${(100 + hy * 6).toFixed(1)} L${x2.toFixed(1)} ${y2.toFixed(1)}`;
+    return `<path class="r-mv-o" d="${line} ${head}"/><path class="r-mv" style="stroke:${cls}" d="${line} ${head}"/>
+      <text class="r-mv-l" x="${(x2 + hx * 8 + px * side * 6).toFixed(1)}" y="${(y2 + hy * 8 + py * side * 6 + 2).toFixed(1)}" text-anchor="middle">${label} ${r0(m.mph)} mph</text>`;
+  };
+  let svg = "";
+  const side = close ? (((cloud.deg - rain.deg + 360) % 360) < 180 ? 1 : -1) : 0;
+  if (cloud) svg += arrow(cloud, "#ffffff", "clouds", side);
+  if (rain) svg += arrow(rain, "#ffb347", "rain", -side);
+  g.innerHTML = svg;
+  const toward = m => `toward the ${compassName(m.deg)} at about ${r0(m.mph)} mph`;
+  const parts = [];
+  if (rain) parts.push(`Rain is moving ${toward(rain)}.`);
+  else if (rainRaw && rainRaw.deg == null) parts.push("Rain on the map is nearly stationary.");
+  if (cloud) parts.push(`${rain ? "Clouds" : "Clouds are"} ${rain ? "are " : ""}moving ${toward(cloud)}.`);
+  el.textContent = parts.length ? parts.join(" ") + " (Tracked across the last 2 hours of frames.)" : "";
+}
+const compassName = deg => ["north", "north-northeast", "northeast", "east-northeast", "east", "east-southeast", "southeast", "south-southeast",
+  "south", "south-southwest", "southwest", "west-southwest", "west", "west-northwest", "northwest", "north-northwest"][Math.round(deg / 22.5) % 16];
+
+// Tap to enlarge; tap again, ✕, the backdrop or Escape to close. The play button only pauses or plays.
+(function () {
+  const box = $("radar"), bd = $("radar-backdrop");
+  if (!box) return;
+  const open = () => { box.classList.add("big"); bd.hidden = false; document.body.classList.add("r-open"); box.setAttribute("aria-label", "Enlarged weather radar. Tap to close."); };
+  const close = () => { box.classList.remove("big"); bd.hidden = true; document.body.classList.remove("r-open"); box.setAttribute("aria-label", "Weather radar and clouds within 100 miles of Rudee Inlet, last 2 hours. Tap to enlarge."); };
+  box.addEventListener("click", e => {
+    if (e.target.closest("#radar-play")) { RA.playing = !RA.playing; if (RA.playing) playRadar(); else { clearTimeout(RA.timer); setPlayBtn(); } return; }
+    box.classList.contains("big") ? close() : open();
+  });
+  box.addEventListener("keydown", e => { if ((e.key === "Enter" || e.key === " ") && e.target === box) { e.preventDefault(); box.classList.contains("big") ? close() : open(); } });
+  bd.addEventListener("click", close);
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && box.classList.contains("big")) close(); });
+})();
 loadRadar();
 setInterval(loadRadar, 5 * 60 * 1000);
 

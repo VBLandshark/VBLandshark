@@ -28,8 +28,8 @@ const MARINE_URL = tmpl(/const u = (`https:\/\/marine-api[\s\S]*?);\n/, "Open-Me
 const WX_URL = tmpl(/const u = (`https:\/\/api\.open-meteo[\s\S]*?);\n/, "Open-Meteo forecast URL", P);
 const radarLines = grab(/^(const R_CLAT[\s\S]*?^const R_BBOX = .*)$/m, "radar box");
 const R_BBOX = new Function(`${radarLines}\nreturn R_BBOX;`)();
-const RADAR_URL = tmpl(/(`https:\/\/opengeo\.ncep\.noaa\.gov[^`]*`)/, "radar URL", {R_BBOX});
-const SAT_URL = tmpl(/(`https:\/\/nowcoast\.noaa\.gov\/geoserver\/satellite[^`]*`)/, "satellite cloud URL", {R_BBOX});
+const RADAR_URL = tmpl(/(`https:\/\/opengeo\.ncep\.noaa\.gov[^`]*`)/, "radar URL", {R_BBOX, t: ""});
+const SAT_URL = tmpl(/(`https:\/\/nowcoast\.noaa\.gov\/geoserver\/satellite[^`]*`)/, "satellite cloud URL", {R_BBOX, t: ""});
 const TOPO_URL = tmpl(/(`https:\/\/basemap\.nationalmap\.gov[^`]*`)/, "USGS topo URL", {R_BBOX});
 const TIDE_BASE = grab(/const base = "(https:\/\/api\.tidesandcurrents[^"]*product=predictions[^"]*)"/, "tide URL") + P.TIDE_STATION;
 const WTEMP_BASE = grab(/const base = "(https:\/\/api\.tidesandcurrents[^"]*water_temperature[^"]*)"/, "water temp URL");
