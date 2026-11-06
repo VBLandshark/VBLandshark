@@ -345,6 +345,17 @@ window.addEventListener("error", function (e) {
   .now > div:first-child { min-width:0; flex:1 1 180px; }
   .big { font:600 44px/1 var(--display); }
   .big small { font-size:20px; color:var(--muted); margin-left:2px; }
+  /* Coastal warning flag (NWS display: pennants for small craft / gale, square flags for storm / hurricane) */
+  .wflag { display:flex; align-items:center; gap:10px; margin-top:10px; }
+  .wflag svg { width:52px; height:60px; flex:none; overflow:visible; }
+  .wf-pole { stroke:var(--cloud); stroke-width:2.5; stroke-linecap:round; }
+  .wf-ball { fill:var(--cloud); }
+  .wf-red { fill:#d93025; } .wf-blk { fill:#111; }
+  .wf-flag { transform-origin:7px 50%; transform-box:view-box; animation:wfWave 1.6s ease-in-out infinite alternate; }
+  @keyframes wfWave { from { transform:skewY(-4deg) scaleX(.94); } to { transform:skewY(4deg) scaleX(1); } }
+  @media (prefers-reduced-motion: reduce) { .wf-flag { animation:none; } }
+  .wflag b { display:block; font:600 14px var(--body); }
+  .wflag small { display:block; color:var(--muted); font-size:12px; line-height:1.35; }
   .row { display:flex; flex-wrap:wrap; gap:10px 24px; margin-top:12px; }
   .kv { display:flex; flex-direction:column; }
   .kv span:first-child { font-size:12.5px; color:var(--muted); }
@@ -1273,6 +1284,7 @@ function renderWind() {
     <div class="now">
       <div>
         <div class="big">${r0(c.wind_speed_10m)}<small>mph</small> ${pill(q)}</div>
+        <div class="wflag" id="windflag"></div>
         <div class="row">
           <div class="kv"><span>Gusts</span><span>${r0(c.wind_gusts_10m)} mph</span></div>
           <div class="kv"><span>Air</span><span>${r0(c.temperature_2m)}°F</span></div>
@@ -1283,7 +1295,38 @@ function renderWind() {
       ${dial(c.wind_direction_10m, "wind", "Wind", r0(c.wind_speed_10m) + " mph")}
     </div>
     <div class="comfort" id="comfort"></div>`;
+  renderWindFlag();
   renderComfort();
+}
+
+// ---- Coastal warning flag: the NWS flag that matches the current wind (or an active marine warning, if stronger) ----
+// 0 none · 1 small craft (one red pennant, 22–33 kt) · 2 gale (two pennants, 34–47) · 3 storm (square red flag with black center, 48–63) · 4 hurricane (two square flags, 64+)
+const WFLAGS = [
+  ["No warning flag", "under 22 kt"],
+  ["Small craft advisory", "one red pennant · 22–33 kt"],
+  ["Gale warning", "two red pennants · 34–47 kt"],
+  ["Storm warning", "square red flag, black center · 48–63 kt"],
+  ["Hurricane warning", "two square red flags, black centers · 64+ kt"],
+];
+function renderWindFlag() {
+  const el = $("windflag");
+  if (!el || !store.wx) return;
+  const kt = (store.wx.current.wind_speed_10m || 0) * 0.868976;
+  const byWind = kt >= 64 ? 4 : kt >= 48 ? 3 : kt >= 34 ? 2 : kt >= 22 ? 1 : 0;
+  const ev = (store.alerts || []).join(" | ");
+  const byAlert = /hurricane (force wind )?warning/i.test(ev) ? 4 : /(tropical )?storm warning/i.test(ev) ? 3
+    : /gale warning/i.test(ev) ? 2 : /small craft advisory/i.test(ev) ? 1 : 0;
+  const lvl = Math.max(byWind, byAlert);
+  const pennant = y => `<path class="wf-red" d="M7 ${y} L50 ${y + 7} L7 ${y + 14} Z"/>`;
+  const square = y => `<rect class="wf-red" x="7" y="${y}" width="40" height="22"/><rect class="wf-blk" x="20" y="${y + 6}" width="14" height="10"/>`;
+  const flags = [ "", pennant(6), pennant(6) + pennant(24), square(6), square(6) + square(31) ][lvl];
+  const speed = Math.max(0.35, 1.8 - kt / 25).toFixed(2);   // flag flaps faster in stronger wind
+  const why = byAlert >= byWind && byAlert ? "NWS advisory in effect" : `wind ${r0(kt)} kt now`;
+  el.innerHTML = `<svg viewBox="0 0 60 70" role="img" aria-label="${WFLAGS[lvl][0]} flag">
+      <line class="wf-pole" x1="6" y1="3" x2="6" y2="68"/><circle class="wf-ball" cx="6" cy="3" r="2.6"/>
+      <g class="wf-flag" style="animation-duration:${speed}s">${flags}</g>
+    </svg>
+    <div><b>${WFLAGS[lvl][0]}</b><small>${WFLAGS[lvl][1]}<br>${why}</small></div>`;
 }
 
 // ---- Beach comfort and swimming: simple rules of thumb from wind, temperature, rain, waves and NWS alerts ----
@@ -2006,6 +2049,7 @@ async function loadAlerts() {
     feats = feats.concat((m.features || []).filter(f => !ids.has(f.id)));
   } catch (e) {}
   store.alerts = feats.map(f => f.properties.event);
+  renderWindFlag();
   renderComfort();
   $("alerts").innerHTML = feats.map(alertHTML).join("");
 }
