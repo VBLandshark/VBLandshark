@@ -203,7 +203,8 @@ add("NOAA radar map (conus_bref_qcd)", async () => {
   const us = pngColored(Buffer.from(await (await req(usUrl)).arrayBuffer()));
   const pct = o => o ? (100 * o.n / o.total).toFixed(1) + "%" : "unreadable";
   must(!us || us.n > 0, "radar shows no rain anywhere in the lower 48 (layer may be stale)");
-  return `map OK · rain on ${pct(local)} of the local map, ${pct(us)} of the US map`;
+  const cors = r.headers.get("access-control-allow-origin") === "*" ? "rain tracking on" : "no CORS, so the page can't track rain motion";
+  return `map OK · rain on ${pct(local)} of the local map, ${pct(us)} of the US map · ${cors}`;
 });
 add("GOES satellite clouds (nowCOAST goes_longwave_imagery)", async () => {
   const r = await req(SAT_URL);
