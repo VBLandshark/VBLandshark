@@ -96,6 +96,19 @@ window.addEventListener("error", function (e) {
   .hr .tmp { font:600 20px var(--display); }
   .hr .rp { font-size:12px; color:var(--rain); min-height:16px; }
   .hr .wn { font-size:12px; color:var(--muted); white-space:nowrap; }
+  .hr .cl { width:30px; height:17px; display:block; }
+  .hr .cl rect { fill:var(--cloud); } .hr .cl .cl-bg { fill:var(--cloud); opacity:.15; }
+  /* Clouds overhead: side view of the sky above the inlet */
+  .cl-wrap { display:grid; grid-template-columns:minmax(0, 460px) minmax(0, 1fr); gap:14px 24px; align-items:start; }
+  @media (max-width:700px) { .cl-wrap { grid-template-columns:1fr; } }
+  .cl-sky { width:100%; height:auto; display:block; border-radius:8px; }
+  .cl-axis { fill:rgba(255,255,255,.75); font:600 9px var(--body); }
+  .cl-band { fill:rgba(255,255,255,.55); font:700 8px var(--body); letter-spacing:.08em; }
+  .cl-line { stroke:rgba(255,255,255,.35); stroke-width:1; stroke-dasharray:3 4; }
+  .cl-lyr { display:flex; gap:10px; align-items:baseline; padding:7px 0; border-bottom:1px solid var(--line, rgba(255,255,255,.08)); }
+  .cl-lyr b { font:600 15px var(--body); min-width:84px; }
+  .cl-lyr span { color:var(--muted); font-size:13px; }
+  .cl-model { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:8px; margin-top:12px; }
   .hr.hr-now { outline:2px solid var(--accent); outline-offset:-2px; }
   .hr.sunev { background:transparent; border:1px dashed var(--sun); }
   .hr.sunev .tmp { font-size:16px; }
@@ -543,6 +556,7 @@ window.addEventListener("error", function (e) {
       <div class="r-key"><i></i><span>Gray haze = cloud cover (GOES satellite, infrared; darker = thicker, higher clouds)</span></div>
       <p class="note" id="radar-note" style="margin-top:4px">NOAA radar · 200 mi across, Rudee Inlet at center</p>
     </section>
+    <section class="panel wide" id="clouds"><h2>Clouds overhead</h2><p class="loading">Loading…</p></section>
     <section class="panel wide" id="hourly"><h2>Hour by hour · daylight</h2><p class="loading">Loading…</p></section>
   </div>
 
@@ -832,8 +846,8 @@ async function loadMarine() {
 }
 async function loadWeather() {
   const u = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}`
-    + `&current=temperature_2m,apparent_temperature,wind_speed_10m,wind_direction_10m,wind_gusts_10m,relative_humidity_2m,uv_index`
-    + `&hourly=temperature_2m,weather_code,precipitation_probability,wind_speed_10m,wind_direction_10m`
+    + `&current=temperature_2m,apparent_temperature,wind_speed_10m,wind_direction_10m,wind_gusts_10m,relative_humidity_2m,uv_index,cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,is_day`
+    + `&hourly=temperature_2m,weather_code,precipitation_probability,wind_speed_10m,wind_direction_10m,cloud_cover_low,cloud_cover_mid,cloud_cover_high`
     + `&daily=uv_index_max,weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant,precipitation_probability_max,sunrise,sunset`
     + `&wind_speed_unit=mph&temperature_unit=fahrenheit&timezone=${encodeURIComponent(TZ)}&forecast_days=3`;
   store.wx = await getJSON(u);
@@ -959,13 +973,113 @@ function renderHourly() {
       <span class="tmp">${r0(h.temperature_2m[i])}°</span>
       <span class="rp">${pr >= 10 ? pr + "%" : ""}</span>
       <span class="wn">${mini(h.wind_direction_10m[i], "wd")}${r0(h.wind_speed_10m[i])}</span>
+      ${cloudBars(h.cloud_cover_high?.[i], h.cloud_cover_mid?.[i], h.cloud_cover_low?.[i])}
     </div>`);
   });
   cells.push(`<div class="hr sunev"><span class="t">Sunset</span>${wxIcon("sunset", true, "Sunset")}<span class="tmp">${fmtTime(new Date(set))}</span><span class="rp"></span><span class="wn"></span></div>`);
   const daylight = Math.round((set - rise) / 6e4);
   $("hourly").innerHTML = `<h2>Hour by hour · ${di ? "tomorrow's" : "today's"} daylight</h2>
     <div class="hours">${cells.join("")}</div>
-    <p class="note">${Math.floor(daylight / 60)} h ${daylight % 60} min of daylight · blue = chance of rain · wind in mph</p>`;
+    <p class="note">${Math.floor(daylight / 60)} h ${daylight % 60} min of daylight · blue = chance of rain · wind in mph · gray bars = high, mid and low cloud cover (top to bottom)</p>`;
+}
+// Three small bars per hour: high, mid and low cloud cover, each as wide as its percentage.
+function cloudBars(hi, mid, lo) {
+  if (hi == null && mid == null && lo == null) return "";
+  const bar = (v, y) => `<rect class="cl-bg" x="0" y="${y}" width="30" height="4" rx="2"/>${v ? `<rect x="0" y="${y}" width="${(Math.min(100, v) * 0.3).toFixed(1)}" height="4" rx="2"/>` : ""}`;
+  return `<svg class="cl" viewBox="0 0 30 17" role="img" aria-label="Clouds: high ${r0(hi)}%, mid ${r0(mid)}%, low ${r0(lo)}%">${bar(hi, 0)}${bar(mid, 6.5)}${bar(lo, 13)}</svg>`;
+}
+
+// ---- Clouds overhead: measured cloud layers (airport report) drawn as a side view of the sky, plus the model's low/mid/high cover ----
+const CL_AMT = {FEW:["Few", 2], SCT:["Scattered", 4], BKN:["Broken", 7], OVC:["Overcast", 8], VV:["Sky obscured", 8]};
+// Likely cloud type from the layer's height and coverage (heights in feet). CB/TCU come from the raw report.
+function cloudType(ft, amt, flag) {
+  if (flag === "CB") return "cumulonimbus (thunderstorm cloud)";
+  if (flag === "TCU") return "towering cumulus";
+  if (amt === "VV") return "fog or very low cloud";
+  if (ft < 2000 && (amt === "OVC" || amt === "BKN")) return "stratus (low gray deck)";
+  if (ft < 6500) return amt === "OVC" || amt === "BKN" ? "stratocumulus" : "cumulus (fair-weather puffs)";
+  if (ft < 20000) return amt === "OVC" || amt === "BKN" ? "altostratus" : "altocumulus";
+  return amt === "OVC" || amt === "BKN" ? "cirrostratus (thin high veil)" : "cirrus (high wisps)";
+}
+function renderClouds() {
+  const el = $("clouds");
+  if (!el || (!store.obs && !store.wx)) return;
+  const o = store.obs?.o, c = store.wx?.current || {};
+  const raw = o?.rawMessage || "";
+  const layers = (o?.cloudLayers || []).filter(l => CL_AMT[l.amount] && l.base?.value != null).map(l => {
+    const ft = Math.round(l.base.value * 3.28084 / 100) * 100;
+    const m = raw.match(new RegExp(`${l.amount}${String(Math.round(ft / 100)).padStart(3, "0")}(CB|TCU)`));
+    return {amt: l.amount, ft, flag: m ? m[1] : ""};
+  });
+  const hr = new Date().getHours(), day = c.is_day != null ? !!c.is_day : hr >= 6 && hr < 18;
+  // Sky picture: altitude on a square-root scale so low clouds get room. 0 ft at the ground, 40,000 ft at the top.
+  const W = 360, G = 196, TOP = 18, X0 = 46, X1 = 300;
+  const Y = ft => G - (G - TOP) * Math.sqrt(Math.min(ft, 40000) / 40000);
+  const fill = day ? "#ffffff" : "#9fb0c4", fillO = day ? .95 : .8;
+  let rnd = 7; const rand = () => (rnd = (rnd * 9301 + 49297) % 233280) / 233280;
+  const puff = (x, y, s) => `<g fill="${fill}" opacity="${fillO}"><circle cx="${x - s * .55}" cy="${y - s * .35}" r="${s * .45}"/><circle cx="${x}" cy="${y - s * .6}" r="${s * .6}"/><circle cx="${x + s * .55}" cy="${y - s * .3}" r="${s * .42}"/><rect x="${x - s}" y="${y - s * .38}" width="${s * 2}" height="${s * .38}" rx="${s * .19}"/></g>`;
+  const wisp = (x, y, faint) => `<path d="M${x - 16} ${y} q 10 -7 22 -3 t 14 -6" fill="none" stroke="${fill}" stroke-width="1.6" stroke-linecap="round" opacity="${faint ? .4 : .85}"${faint ? ' stroke-dasharray="3 3"' : ""}/>`;
+  let g = "";
+  const bandY = [[0, 6500, "LOW", c.cloud_cover_low], [6500, 20000, "MID", c.cloud_cover_mid], [20000, 40000, "HIGH", c.cloud_cover_high]];
+  bandY.forEach(([a, b, name, pct]) => {
+    if (pct) g += `<rect x="${X0}" y="${Y(b)}" width="${X1 - X0}" height="${Y(a) - Y(b)}" fill="${fill}" opacity="${(pct / 100 * .14).toFixed(3)}"/>`;
+    if (a) g += `<line class="cl-line" x1="${X0}" x2="${W - 6}" y1="${Y(a)}" y2="${Y(a)}"/>`;
+    g += `<text class="cl-band" x="${X0 + 4}" y="${Y(b) + 11}">${name}</text>`;
+    if (pct != null) g += `<text class="cl-axis" x="${W - 8}" y="${(Y(a) + Y(b)) / 2 + 3}" text-anchor="end">${r0(pct)}%</text>`;
+  });
+  [[1000, "1k"], [5000, "5k"], [10000, "10k"], [20000, "20k"], [30000, "30k ft"]].forEach(([ft, l]) => g += `<text class="cl-axis" x="${X0 - 6}" y="${Y(ft) + 3}" text-anchor="end">${l}</text>`);
+  // Measured layers
+  layers.forEach(L => {
+    const y = Y(L.ft), oktas = CL_AMT[L.amt][1], n = L.amt === "OVC" || L.amt === "VV" ? 0 : [0, 2, 2, 3, 4, 6, 7, 8][oktas] || 2;
+    if (L.flag === "CB") {
+      // Thunderstorm cloud: billowing tower from the layer base up to an anvil near 35,000 ft
+      const x = X0 + 80 + rand() * 90, top = Y(35000);
+      g += `<path d="M${x - 40} ${y} C ${x - 44} ${y - 40}, ${x - 26} ${top + 40}, ${x - 18} ${top + 14} L ${x - 66} ${top + 10} Q ${x - 10} ${top - 6} ${x + 84} ${top + 6} L ${x + 22} ${top + 14} C ${x + 30} ${top + 40}, ${x + 46} ${y - 40}, ${x + 40} ${y} Z" fill="${fill}" opacity="${fillO}"/>`;
+      for (let k = 0; k < 5; k++) { const yy = y - (y - top - 20) * k / 5; g += puff(x - 24 + k * 2, yy, 14 - k) + puff(x + 22 - k * 2, yy - 6, 13 - k); }
+    } else if (L.flag === "TCU") {
+      const x = X0 + 60 + rand() * 120, top = Y(L.ft + 14000);
+      for (let k = 0; k < 4; k++) g += puff(x + (rand() - .5) * 10, y - (y - top) * k / 3.4, 16 - k * 1.5);
+    }
+    if (L.ft >= 20000) {
+      if (n) for (let i = 0; i < n * 2; i++) g += wisp(X0 + 20 + (i + rand() * .6) * (X1 - X0 - 30) / (n * 2), y - rand() * 6);
+      else g += `<rect x="${X0}" y="${y - 5}" width="${X1 - X0}" height="6" fill="${fill}" opacity=".35"/>`;
+    } else if (L.ft >= 6500) {
+      if (n) for (let i = 0; i < n; i++) { const x = X0 + 18 + (i + .5 + (rand() - .5) * .5) * (X1 - X0 - 36) / n; g += `<ellipse cx="${x}" cy="${y - 4}" rx="${13 + rand() * 6}" ry="5" fill="${fill}" opacity="${fillO}"/>`; }
+      else g += `<rect x="${X0}" y="${y - 11}" width="${X1 - X0}" height="11" rx="5" fill="${fill}" opacity="${fillO * .85}"/>`;
+    } else {
+      if (n) for (let i = 0; i < n; i++) { const x = X0 + 18 + (i + .5 + (rand() - .5) * .5) * (X1 - X0 - 36) / n; g += puff(x, y, 11 + rand() * 6); }
+      else { let d = `M${X0} ${y}`; for (let x = X0; x < X1; x += 18) d += ` q 9 -${8 + rand() * 6} 18 0`; g += `<path d="${d} L ${X1} ${y + 6} L ${X0} ${y + 6} Z" fill="${fill}" opacity="${fillO * .9}"/>`; }
+    }
+  });
+  // Airport sensors only reach about 12,000 ft; if the model has high cloud and nothing was measured up there, sketch faint forecast wisps.
+  if ((c.cloud_cover_high || 0) >= 15 && !layers.some(L => L.ft >= 20000)) {
+    const n = Math.max(2, Math.round(c.cloud_cover_high / 12));
+    for (let i = 0; i < n; i++) g += wisp(X0 + 22 + (i + rand() * .6) * (X1 - X0 - 30) / n, Y(30000) + (rand() - .5) * 14, true);
+  }
+  const sky = day ? ["#4f8fc7", "#a9d0ee"] : ["#0a1626", "#22385a"];
+  const svg = `<svg class="cl-sky" viewBox="0 0 ${W} 220" role="img" aria-label="Side view of the clouds above Rudee Inlet">
+    <defs><linearGradient id="clsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sky[0]}"/><stop offset="1" stop-color="${sky[1]}"/></linearGradient></defs>
+    <rect width="${W}" height="220" fill="url(#clsky)"/>
+    ${day ? `<circle cx="${W - 34}" cy="30" r="10" fill="#ffd866" opacity=".9"/>` : `<circle cx="${W - 34}" cy="30" r="8" fill="#e8edf5" opacity=".85"/>`}
+    ${g}
+    <rect x="0" y="${G}" width="${W * .42}" height="${220 - G}" fill="#d9c79a"/><rect x="${W * .42}" y="${G}" width="${W * .58}" height="${220 - G}" fill="#2d6f86"/>
+    <path d="M${W * .42} ${G} q 6 3 12 0 t 12 0" fill="none" stroke="#e9f4f7" stroke-width="1.4" opacity=".7"/>
+    <text class="cl-axis" x="8" y="${G + 15}">Rudee Inlet</text>
+  </svg>`;
+  const list = layers.length
+    ? layers.map(L => `<div class="cl-lyr"><b>${CL_AMT[L.amt][0]}</b><div>${L.ft.toLocaleString()} ft<br><span>${cloudType(L.ft, L.amt, L.flag)}</span></div></div>`).join("")
+    : o ? `<div class="cl-lyr"><b>Clear</b><div>no clouds below about 12,000 ft</div></div>` : "";
+  const model = c.cloud_cover != null ? `<div class="cl-model">
+      <div class="kv"><span>Total</span><span>${r0(c.cloud_cover)}%</span></div>
+      <div class="kv"><span>High</span><span>${r0(c.cloud_cover_high)}%</span></div>
+      <div class="kv"><span>Mid</span><span>${r0(c.cloud_cover_mid)}%</span></div>
+      <div class="kv"><span>Low</span><span>${r0(c.cloud_cover_low)}%</span></div></div>` : "";
+  el.innerHTML = `<h2>Clouds overhead</h2>
+    <div class="cl-wrap">${svg}
+      <div>${list}${model}
+        <p class="note" style="margin-top:10px">${o ? `Layers measured at ${esc(store.obs.st.name)}, ${fmtTime(new Date(o.timestamp))}. Airport sensors see up to about 12,000 ft. ` : ""}Percentages are the forecast model's cover estimate for now (Open-Meteo); dashed wisps are high cloud the model expects but the airport can't see. Cloud types are inferred from height and coverage.</p>
+      </div>
+    </div>`;
 }
 
 // Smooth a list of [x, y] points into a curved SVG path (Catmull-Rom → Bézier).
@@ -2017,6 +2131,7 @@ function obsHTML(b) {
   const inHg = o.barometricPressure?.value == null ? null : o.barometricPressure.value / 3386.39;
   const hr = new Date(o.timestamp).getHours(), day = hr >= 6 && hr < 18;
   store.obsTempF = F(o.temperature.value);
+  store.obs = b;
   return `<div class="obs">
     <div class="obs-main">${wxIcon(textKind(o.textDescription), day, o.textDescription)}
       <div><div class="big" style="font-size:40px">${r0(F(o.temperature.value))}°</div>
@@ -2042,6 +2157,7 @@ async function loadNWS() {
     + p.map(x => `<div class="fc">${wxIcon(textKind(x.shortForecast), x.isDaytime, x.shortForecast)}
         <p class="text"><b>${esc(x.name)}:</b> ${esc(x.shortForecast)}, ${x.isDaytime ? "high" : "low"} ${x.temperature}°${esc(x.temperatureUnit)}. Wind ${esc(x.windDirection)} ${esc(x.windSpeed)}.</p></div>`).join("") + `</div>`;
   fillHiLo();
+  renderClouds();
 }
 
 async function loadAlerts() {
@@ -2113,7 +2229,7 @@ async function loadAll() {
   dialId = 0;
   const both = Promise.all([loadMarine(), loadWeather()]);
   const tasks = [
-    both.then(() => { renderSurf(); renderWind(); renderOutlook(); renderWaves(); renderHourly(); renderInlet(); renderUvSuit(); })
+    both.then(() => { renderSurf(); renderWind(); renderOutlook(); renderWaves(); renderHourly(); renderClouds(); renderInlet(); renderUvSuit(); })
         .catch(e => { fail("surf", "Surf now", e); fail("wind", "Wind &amp; weather now", e); fail("outlook", "3-day surf &amp; weather outlook", e); fail("waves", "Waves · height &amp; period", e); }),
     loadTides().catch(e => fail("tides", "Tides · Rudee Inlet", e)),
     loadMarineText().catch(e => fail("marine", "Coastal marine forecast · Cape Henry to Currituck", e)),
@@ -2123,6 +2239,7 @@ async function loadAll() {
     Promise.all([loadWaterTemps(), both.catch(() => {})]).then(([t]) => renderFishing(t)),
   ];
   await Promise.allSettled(tasks);
+  if (!store.obs && !store.wx) fail("clouds", "Clouds overhead", new Error("no cloud data"));
   try { renderSolunar(); } catch (e) { fail("solunar", "Solunar · fish feeding times", e); }
   try { renderBest(); } catch (e) { fail("best", "Best times to fish &amp; surf", e); }
   $("updated").textContent = "Updated " + fmtTime(new Date());
