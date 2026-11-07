@@ -1331,8 +1331,10 @@ function showSurfReport() {
   const line = r.lastLight ? `At last light the surf between the pier and the jetty was ${esc(r.looks)}`
     : age < 3 ? `Right now the surf between the pier and the jetty looks ${esc(r.looks)}`
     : `The surf between the pier and the jetty looked ${esc(r.looks)}`;
+  // The check taken at the day's peak surf time (from the Best times tab) is marked peak.
+  const lead = r.peak ? `<b>Likely the day's best surf:</b> ` : "";
   el.innerHTML = `<p><b>Surf report · ${when}</b></p>
-    <p style="margin-top:3px">${line}</p>
+    <p style="margin-top:3px">${lead}${line}</p>
     <p class="note">From the Surfchex pier cam, which sweeps from the pier to the 1st Street jetty</p>`;
 }
 
