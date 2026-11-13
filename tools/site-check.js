@@ -269,7 +269,9 @@ async function runAll(list) {
   for (const r of res) console.log(`${r.ok ? "PASS" : "FAIL"}  ${r.name} — ${r.note}`);
   const bad = res.filter(r => !r.ok);
   await report(bad, res);
-  if (bad.length) process.exitCode = 1;
+  // Failures are reported via the GitHub issue and the FAIL lines above; don't fail the run,
+  // so GitHub doesn't also send a "Run failed" email every time.
+  if (bad.length) console.log(`${bad.length} check(s) failed (see FAIL lines).`);
 })();
 
 // ---- GitHub issue reporting ----
