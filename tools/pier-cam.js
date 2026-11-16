@@ -2,7 +2,7 @@
 // Run by .github/workflows/pier-cam.yml; frames go to the cam-frames branch for the scheduled surf report to look at.
 const { chromium } = require("playwright");
 const fs = require("fs");
-const FRAMES = +(process.env.FRAMES || 15), EVERY = +(process.env.EVERY || 10);   // 15 frames, 10 s apart ≈ one full sweep
+const FRAMES = +(process.env.FRAMES || 36), EVERY = +(process.env.EVERY || 10);   // 36 frames, 10 s apart ≈ 6 minutes, so at least one full sweep
 (async () => {
   fs.mkdirSync("cam-frames", {recursive: true});
   const status = {time: new Date().toISOString(), online: false, frames: [], note: ""};
